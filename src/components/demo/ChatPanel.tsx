@@ -5,14 +5,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Sparkles } from "lucide-react";
-import { DEMO_MESSAGES } from "@/lib/constants";
+import { ChatMessage } from "@/lib/types";
 
 interface ChatPanelProps {
   mode: 'chat' | 'build';
 }
 
+const DEMO_MESSAGES: ChatMessage[] = [
+  {
+    type: 'user',
+    content: 'Create a modern task management app with drag-and-drop',
+    timestamp: '10:30 AM'
+  },
+  {
+    type: 'ai',
+    content: 'I\'ll create a modern task management app with drag-and-drop functionality. This will include a Kanban board layout, smooth animations, and a beautiful design.',
+    timestamp: '10:30 AM',
+    isTyping: false
+  },
+  {
+    type: 'user',
+    content: 'Add user authentication and real-time collaboration',
+    timestamp: '10:32 AM'
+  },
+  {
+    type: 'ai',
+    content: 'Perfect! I\'ll integrate Supabase for authentication and real-time features. Users will be able to collaborate on boards in real-time with instant updates.',
+    timestamp: '10:32 AM',
+    isTyping: false
+  }
+];
+
 const ChatPanel = ({ mode }: ChatPanelProps) => {
-  const [messages, setMessages] = useState(DEMO_MESSAGES.slice(0, 1));
+  const [messages, setMessages] = useState<ChatMessage[]>(DEMO_MESSAGES.slice(0, 1));
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
@@ -40,8 +65,8 @@ const ChatPanel = ({ mode }: ChatPanelProps) => {
   const handleSend = () => {
     if (!inputValue.trim()) return;
     
-    const newMessage = {
-      type: 'user' as const,
+    const newMessage: ChatMessage = {
+      type: 'user',
       content: inputValue,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -53,8 +78,8 @@ const ChatPanel = ({ mode }: ChatPanelProps) => {
     setTimeout(() => {
       setIsTyping(true);
       setTimeout(() => {
-        const aiResponse = {
-          type: 'ai' as const,
+        const aiResponse: ChatMessage = {
+          type: 'ai',
           content: mode === 'chat' 
             ? "I can help you with that! Let me analyze your request and provide guidance on best practices and implementation strategies."
             : "I'll create that for you right away! Let me scaffold the components and implement the functionality with modern design patterns.",

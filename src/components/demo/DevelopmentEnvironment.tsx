@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Eye, FileTree, Terminal, Play, Settings } from "lucide-react";
+import { MessageSquare, Eye, Folder, Terminal, Play, Settings } from "lucide-react";
 import ChatPanel from "./ChatPanel";
 import PreviewWindow from "./PreviewWindow";
 import FileExplorer from "./FileExplorer";
@@ -65,7 +65,7 @@ const DevelopmentEnvironment = () => {
                       Chat
                     </TabsTrigger>
                     <TabsTrigger value="files" className="flex-1">
-                      <FileTree className="mr-2 h-4 w-4" />
+                      <Folder className="mr-2 h-4 w-4" />
                       Files
                     </TabsTrigger>
                     <TabsTrigger value="terminal" className="flex-1">

@@ -36,31 +36,6 @@ export const ANIMATION_CONFIGS = {
   }
 } as const;
 
-export const DEMO_MESSAGES = [
-  {
-    type: 'user',
-    content: 'Create a modern task management app with drag-and-drop',
-    timestamp: '10:30 AM'
-  },
-  {
-    type: 'ai',
-    content: 'I\'ll create a modern task management app with drag-and-drop functionality. This will include a Kanban board layout, smooth animations, and a beautiful design.',
-    timestamp: '10:30 AM',
-    isTyping: false
-  },
-  {
-    type: 'user',
-    content: 'Add user authentication and real-time collaboration',
-    timestamp: '10:32 AM'
-  },
-  {
-    type: 'ai',
-    content: 'Perfect! I\'ll integrate Supabase for authentication and real-time features. Users will be able to collaborate on boards in real-time with instant updates.',
-    timestamp: '10:32 AM',
-    isTyping: false
-  }
-] as const;
-
 export const WORKFLOW_STEPS = [
   {
     id: 1,
