@@ -1,139 +1,139 @@
-
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, Menu, X } from "lucide-react";
+import React from "react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Menu, X, Code2, Sparkles, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link, useLocation } from "react-router-dom";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
-  const navItems = [
-    { href: "#architecture", label: "Architecture" },
-    { href: "#demo", label: "Interactive Demo" },
-    { href: "#capabilities", label: "Capabilities" },
+  const navigationItems = [
+    { name: "Home", href: "/", icon: Code2 },
+    { name: "Playground", href: "/playground", icon: Play },
+    { name: "Architecture", href: "/#architecture" },
+    { name: "Demo", href: "/#demo" },
+    { name: "Capabilities", href: "/#capabilities" },
   ];
 
   return (
     <motion.header 
-      className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.6 }}
     >
-      <div className="container">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
+      <div className="container flex h-16 items-center justify-between">
+        {/* Logo */}
+        <Link to="/" className="flex items-center space-x-2 group">
           <motion.div 
-            className="flex items-center space-x-3"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 300 }}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-600"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-purple-600">
-              <span className="text-white font-bold text-lg">N</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xl font-bold">NovaPilot</span>
-              <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
-                <Sparkles className="mr-1 h-3 w-3" />
-                AI Dev Environment
-              </Badge>
-            </div>
+            <Sparkles className="h-4 w-4 text-white" />
           </motion.div>
+          <span className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            NovaPilot
+          </span>
+        </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item, index) => (
-              <motion.a
-                key={item.href}
-                href={item.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary relative"
-                whileHover={{ scale: 1.05 }}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-1">
+          {navigationItems.map((item) => {
+            const isActive = location.pathname === item.href || 
+                           (item.href.startsWith('/#') && location.pathname === '/' && location.hash === item.href.slice(1));
+            
+            return (
+              <Button
+                key={item.name}
+                variant={isActive ? "default" : "ghost"}
+                size="sm"
+                asChild
+                className="transition-all duration-200 hover:scale-105"
               >
-                {item.label}
-                <motion.div
-                  className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary origin-left"
-                  initial={{ scaleX: 0 }}
-                  whileHover={{ scaleX: 1 }}
-                  transition={{ duration: 0.2 }}
-                />
-              </motion.a>
-            ))}
-          </nav>
+                {item.href.startsWith('/#') ? (
+                  <a href={item.href}>
+                    {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                    {item.name}
+                  </a>
+                ) : (
+                  <Link to={item.href}>
+                    {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                    {item.name}
+                  </Link>
+                )}
+              </Button>
+            );
+          })}
+        </nav>
 
-          {/* Desktop CTA */}
-          <motion.div 
-            className="hidden md:flex items-center space-x-4"
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="hover:scale-105 transition-transform duration-200"
-            >
-              Documentation
-            </Button>
-            <Button 
-              size="sm"
-              className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
-            >
-              Try Demo
-            </Button>
-          </motion.div>
-
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        {/* CTA Button */}
+        <div className="hidden md:flex items-center space-x-2">
+          <Button asChild className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90">
+            <Link to="/playground">
+              <Play className="mr-2 h-4 w-4" />
+              Try Playground
+            </Link>
           </Button>
         </div>
 
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              className="md:hidden border-t bg-background/95 backdrop-blur-sm"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="container py-4 space-y-4">
-                {navItems.map((item, index) => (
-                  <motion.a
-                    key={item.href}
-                    href={item.href}
-                    className="block text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, delay: index * 0.05 }}
+        {/* Mobile Menu Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="md:hidden"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden border-t bg-background/95 backdrop-blur"
+          >
+            <div className="container py-4">
+              <nav className="space-y-2">
+                {navigationItems.map((item) => (
+                  <Button
+                    key={item.name}
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    asChild
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {item.label}
-                  </motion.a>
+                    {item.href.startsWith('/#') ? (
+                      <a href={item.href}>
+                        {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                        {item.name}
+                      </a>
+                    ) : (
+                      <Link to={item.href}>
+                        {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                        {item.name}
+                      </Link>
+                    )}
+                  </Button>
                 ))}
-                <div className="flex flex-col space-y-2 pt-4 border-t">
-                  <Button variant="outline" size="sm">
-                    Documentation
-                  </Button>
-                  <Button size="sm" className="bg-gradient-to-r from-primary to-purple-600">
-                    Try Demo
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                <Button className="w-full mt-4 bg-gradient-to-r from-primary to-purple-600" asChild>
+                  <Link to="/playground" onClick={() => setIsMenuOpen(false)}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Try Playground
+                  </Link>
+                </Button>
+              </nav>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 };
