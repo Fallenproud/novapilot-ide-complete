@@ -9,7 +9,7 @@ export interface EditorTab {
   filePath: string;
   language: string;
   isDirty?: boolean;
-  isActive?: boolean;
+  isActive: boolean;  // Made required instead of optional
 }
 
 interface EditorState {
@@ -64,7 +64,7 @@ export const useEditorStore = create<EditorState>()(
         };
 
         set(state => ({
-          tabs: state.tabs.map(tab => ({ ...tab, isActive: false })).concat(newTab),
+          tabs: [...state.tabs.map(tab => ({ ...tab, isActive: false })), newTab],
           activeTabId: newTab.id
         }));
       },
