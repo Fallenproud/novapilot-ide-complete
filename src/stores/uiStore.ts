@@ -19,6 +19,9 @@ interface UIState {
   showMinimap: boolean;
   showLineNumbers: boolean;
   
+  // Theme management
+  isDarkMode: boolean;
+  
   // Actions
   setSidebarWidth: (width: number) => void;
   setEditorHeight: (height: number) => void;
@@ -32,6 +35,9 @@ interface UIState {
   setLayout: (layout: 'split' | 'editor-only' | 'preview-only') => void;
   toggleMinimap: () => void;
   toggleLineNumbers: () => void;
+  
+  setDarkMode: (isDark: boolean) => void;
+  toggleDarkMode: () => void;
   
   resetLayout: () => void;
 }
@@ -54,6 +60,9 @@ export const useUIStore = create<UIState>()(
       layout: 'split',
       showMinimap: false,
       showLineNumbers: true,
+      
+      // Theme management
+      isDarkMode: true,
 
       setSidebarWidth: (width) => {
         set({ sidebarWidth: Math.max(200, Math.min(600, width)) });
@@ -93,6 +102,14 @@ export const useUIStore = create<UIState>()(
 
       toggleLineNumbers: () => {
         set(state => ({ showLineNumbers: !state.showLineNumbers }));
+      },
+
+      setDarkMode: (isDark) => {
+        set({ isDarkMode: isDark });
+      },
+
+      toggleDarkMode: () => {
+        set(state => ({ isDarkMode: !state.isDarkMode }));
       },
 
       resetLayout: () => {
