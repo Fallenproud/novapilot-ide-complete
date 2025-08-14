@@ -13,6 +13,7 @@ import {
   Zap
 } from "lucide-react";
 import { useAIStore } from "@/stores/aiStore";
+import { aiWorkflowEngine } from "@/services/aiWorkflowEngine";
 
 const PROMPT_TEMPLATES = [
   {
@@ -44,31 +45,16 @@ const PROMPT_TEMPLATES = [
 const PromptInput = () => {
   const [prompt, setPrompt] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const { addMessage, setUserPrompt, setCurrentStep, isProcessing } = useAIStore();
+  const { isProcessing, clearWorkflow } = useAIStore();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!prompt.trim() || isProcessing) return;
 
-    // Add user message
-    addMessage({
-      type: 'user',
-      content: prompt,
-      step: 'request'
-    });
+    // Clear previous workflow
+    clearWorkflow();
 
-    // Set user prompt in AI store
-    setUserPrompt(prompt);
-    setCurrentStep('request');
-
-    // Start AI processing simulation
-    setTimeout(() => {
-      setCurrentStep('analysis');
-      addMessage({
-        type: 'ai',
-        content: 'Analyzing your request and scanning existing project structure...',
-        step: 'analysis'
-      });
-    }, 500);
+    // Start AI workflow
+    await aiWorkflowEngine.executeWorkflow(prompt);
 
     // Clear input
     setPrompt('');
@@ -100,6 +86,7 @@ const PromptInput = () => {
           placeholder="e.g., Create a task management app with drag-and-drop functionality..."
           className="bg-[#21262D] border-[#30363D] text-[#F0F6FC] placeholder:text-[#8B949E] resize-none"
           rows={4}
+          disabled={isProcessing}
         />
         <div className="mt-2 text-xs text-[#8B949E]">
           Press ⌘⏎ (Ctrl+Enter) to send
@@ -119,8 +106,8 @@ const PromptInput = () => {
                 key={template.id}
                 className={`p-3 cursor-pointer transition-colors hover:bg-[#21262D] border-[#30363D] ${
                   selectedTemplate === template.id ? 'bg-[#21262D] border-[#1F6FEB]' : 'bg-[#161B22]'
-                }`}
-                onClick={() => handleTemplateSelect(template)}
+                } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => !isProcessing && handleTemplateSelect(template)}
               >
                 <div className="flex items-start space-x-2">
                   <Icon className="h-4 w-4 text-[#1F6FEB] mt-0.5 flex-shrink-0" />
@@ -139,7 +126,7 @@ const PromptInput = () => {
       <Button
         onClick={handleSubmit}
         disabled={!prompt.trim() || isProcessing}
-        className="w-full bg-[#1F6FEB] hover:bg-[#1F6FEB]/90 text-white"
+        className="w-full bg-[#1F6FEB] hover:bg-[#1F6FEB]/90 text-white disabled:opacity-50"
       >
         {isProcessing ? (
           <>

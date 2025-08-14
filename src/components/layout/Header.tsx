@@ -1,88 +1,135 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Github, Twitter, Mail, Sun, Moon } from "lucide-react";
+import { ModeToggle } from "@/components/ui/mode-toggle";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useUIStore } from "@/stores/uiStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { 
+  Code2, 
+  FolderOpen, 
+  Play, 
+  Settings,
+  Command,
+  User,
+  Bell
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toggleSettings, toggleCommandPalette } = useUIStore();
+  const { activeProject, projects } = useProjectStore();
 
-  const navItems = [
-    { name: 'Home', path: '/' },
-    { name: 'Playground', path: '/playground' },
-    { name: 'Projects', path: '/projects' },
-  ];
+  const isActive = (path: string) => location.pathname === path;
+
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+
+  const handleProjectsClick = () => {
+    navigate('/projects');
+  };
+
+  const handlePlaygroundClick = () => {
+    if (activeProject) {
+      navigate('/playground');
+    } else {
+      // Create a sample project if none exists
+      const { createProject, setActiveProject } = useProjectStore.getState();
+      createProject('Sample Project', 'A sample project for testing');
+      // Get the newly created project
+      const newProject = useProjectStore.getState().projects[0];
+      setActiveProject(newProject);
+      navigate('/playground');
+    }
+  };
 
   return (
-    <div className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div className="container flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center font-semibold">
-          NovaPilot
-        </Link>
-        <div className="flex items-center gap-6">
-          <nav className="flex items-center space-x-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`text-sm font-medium transition-colors hover:text-foreground/80 ${location.pathname === item.path ? 'text-foreground' : 'text-muted-foreground'}`}
-              >
-                {item.name}
-              </Link>
-            ))}
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center justify-between">
+        {/* Left side - Logo and Navigation */}
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleLogoClick}
+            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+          >
+            <Code2 className="h-6 w-6 text-primary" />
+            <span className="hidden font-bold sm:inline-block">
+              NovaPilot
+            </span>
+          </button>
+
+          <nav className="flex items-center space-x-2">
+            <Button
+              variant={isActive('/projects') ? 'default' : 'ghost'}
+              size="sm"
+              onClick={handleProjectsClick}
+              className="flex items-center gap-2"
+            >
+              <FolderOpen className="h-4 w-4" />
+              Projects
+              {projects.length > 0 && (
+                <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
+                  {projects.length}
+                </Badge>
+              )}
+            </Button>
+
+            <Button
+              variant={isActive('/playground') ? 'default' : 'ghost'}
+              size="sm"
+              onClick={handlePlaygroundClick}
+              className="flex items-center gap-2"
+            >
+              <Play className="h-4 w-4" />
+              Playground
+              {activeProject && (
+                <Badge variant="outline" className="ml-1 px-1.5 py-0.5 text-xs">
+                  {activeProject.name}
+                </Badge>
+              )}
+            </Button>
           </nav>
+        </div>
+
+        {/* Right side - Actions and User */}
+        <div className="flex items-center space-x-2">
+          {/* Command Palette */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleCommandPalette}
+            className="flex items-center gap-2"
+          >
+            <Command className="h-4 w-4" />
+            <span className="hidden sm:inline">⌘K</span>
+          </Button>
+
+          {/* Notifications */}
+          <Button variant="ghost" size="sm">
+            <Bell className="h-4 w-4" />
+          </Button>
+
+          {/* Settings */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSettings}
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+
+          {/* Theme Toggle */}
           <ModeToggle />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatars/01.png" alt="Avatar" />
-                  <AvatarFallback>OM</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              <DropdownMenuItem>
-                Profile
-                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                Billing
-                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                Settings
-                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Github className="mr-2 h-4 w-4" />
-                Github
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Twitter className="mr-2 h-4 w-4" />
-                Twitter
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Mail className="mr-2 h-4 w-4" />
-                Support
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+          {/* User Profile */}
+          <Button variant="ghost" size="sm">
+            <User className="h-4 w-4" />
+          </Button>
         </div>
       </div>
-    </div>
+    </header>
   );
 };
 

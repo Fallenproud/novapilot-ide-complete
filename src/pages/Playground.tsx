@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +18,7 @@ import StatusBar from "@/components/playground/StatusBar";
 import PreviewPane from "@/components/playground/PreviewPane";
 import { useAIStore } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
+import ChatMessages from "@/components/playground/ChatMessages";
 
 const Playground = () => {
   const [isRunning, setIsRunning] = useState(false);
@@ -87,8 +87,16 @@ const Playground = () => {
             <WorkflowStepper />
           </div>
 
+          {/* Chat Messages */}
+          <div className="flex-1 flex flex-col border-b border-[#21262D]">
+            <div className="p-3 bg-[#21262D]">
+              <h3 className="text-sm font-medium text-[#F0F6FC]">AI Chat</h3>
+            </div>
+            <ChatMessages />
+          </div>
+
           {/* File Explorer & Terminal */}
-          <div className="flex-1 overflow-hidden">
+          <div className="h-64 overflow-hidden">
             <Tabs defaultValue="files" className="h-full flex flex-col">
               <TabsList className="w-full bg-[#21262D] border-b border-[#21262D] rounded-none">
                 <TabsTrigger value="files" className="flex-1">
