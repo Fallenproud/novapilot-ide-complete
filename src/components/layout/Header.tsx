@@ -1,140 +1,88 @@
-import React from "react";
-import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ModeToggle } from "@/components/ui/mode-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Code2, Sparkles, Play } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Github, Twitter, Mail, Sun, Moon } from "lucide-react";
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const navigationItems = [
-    { name: "Home", href: "/", icon: Code2 },
-    { name: "Playground", href: "/playground", icon: Play },
-    { name: "Architecture", href: "/#architecture" },
-    { name: "Demo", href: "/#demo" },
-    { name: "Capabilities", href: "/#capabilities" },
+  const navItems = [
+    { name: 'Home', path: '/' },
+    { name: 'Playground', path: '/playground' },
+    { name: 'Projects', path: '/projects' },
   ];
 
   return (
-    <motion.header 
-      className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2 group">
-          <motion.div 
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-600"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Sparkles className="h-4 w-4 text-white" />
-          </motion.div>
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            NovaPilot
-          </span>
+    <div className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <div className="container flex items-center justify-between h-16">
+        <Link to="/" className="flex items-center font-semibold">
+          NovaPilot
         </Link>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-1">
-          {navigationItems.map((item) => {
-            const isActive = location.pathname === item.href || 
-                           (item.href.startsWith('/#') && location.pathname === '/' && location.hash === item.href.slice(1));
-            
-            return (
-              <Button
+        <div className="flex items-center gap-6">
+          <nav className="flex items-center space-x-4">
+            {navItems.map((item) => (
+              <Link
                 key={item.name}
-                variant={isActive ? "default" : "ghost"}
-                size="sm"
-                asChild
-                className="transition-all duration-200 hover:scale-105"
+                to={item.path}
+                className={`text-sm font-medium transition-colors hover:text-foreground/80 ${location.pathname === item.path ? 'text-foreground' : 'text-muted-foreground'}`}
               >
-                {item.href.startsWith('/#') ? (
-                  <a href={item.href}>
-                    {item.icon && <item.icon className="mr-2 h-4 w-4" />}
-                    {item.name}
-                  </a>
-                ) : (
-                  <Link to={item.href}>
-                    {item.icon && <item.icon className="mr-2 h-4 w-4" />}
-                    {item.name}
-                  </Link>
-                )}
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+          <ModeToggle />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/avatars/01.png" alt="Avatar" />
+                  <AvatarFallback>OM</AvatarFallback>
+                </Avatar>
               </Button>
-            );
-          })}
-        </nav>
-
-        {/* CTA Button */}
-        <div className="hidden md:flex items-center space-x-2">
-          <Button asChild className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90">
-            <Link to="/playground">
-              <Play className="mr-2 h-4 w-4" />
-              Try Playground
-            </Link>
-          </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuItem>
+                Profile
+                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Billing
+                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Settings
+                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Github className="mr-2 h-4 w-4" />
+                Github
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Twitter className="mr-2 h-4 w-4" />
+                Twitter
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Mail className="mr-2 h-4 w-4" />
+                Support
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Logout</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-
-        {/* Mobile Menu Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="md:hidden"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
       </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t bg-background/95 backdrop-blur"
-          >
-            <div className="container py-4">
-              <nav className="space-y-2">
-                {navigationItems.map((item) => (
-                  <Button
-                    key={item.name}
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start"
-                    asChild
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.href.startsWith('/#') ? (
-                      <a href={item.href}>
-                        {item.icon && <item.icon className="mr-2 h-4 w-4" />}
-                        {item.name}
-                      </a>
-                    ) : (
-                      <Link to={item.href}>
-                        {item.icon && <item.icon className="mr-2 h-4 w-4" />}
-                        {item.name}
-                      </Link>
-                    )}
-                  </Button>
-                ))}
-                <Button className="w-full mt-4 bg-gradient-to-r from-primary to-purple-600" asChild>
-                  <Link to="/playground" onClick={() => setIsMenuOpen(false)}>
-                    <Play className="mr-2 h-4 w-4" />
-                    Try Playground
-                  </Link>
-                </Button>
-              </nav>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.header>
+    </div>
   );
 };
 
