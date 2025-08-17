@@ -6,6 +6,7 @@ import Index from "@/pages/Index";
 import Projects from "@/pages/Projects";
 import Playground from "@/pages/Playground";
 import PlaygroundNew from "@/pages/PlaygroundNew";
+import AdvancedIDE from "@/pages/AdvancedIDE";
 import ProjectStatus from "@/pages/ProjectStatus";
 import NotFound from "@/pages/NotFound";
 import Header from "@/components/layout/Header";
@@ -17,7 +18,7 @@ import { useUIStore } from "@/stores/uiStore";
 const AppContent = () => {
   const location = useLocation();
   const { isSettingsOpen, toggleSettings } = useUIStore();
-  const isPlayground = location.pathname === '/playground';
+  const isPlayground = location.pathname === '/playground' || location.pathname === '/playground-new' || location.pathname === '/ide';
 
   return (
     <div className={`${isPlayground ? 'h-screen' : 'min-h-screen'} bg-background font-sans antialiased flex flex-col`}>
@@ -28,6 +29,7 @@ const AppContent = () => {
           <Route path="/projects" element={<Projects />} />
           <Route path="/playground" element={<Playground />} />
           <Route path="/playground-new" element={<PlaygroundNew />} />
+          <Route path="/ide" element={<AdvancedIDE />} />
           <Route path="/status" element={<ProjectStatus />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
