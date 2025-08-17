@@ -33,13 +33,22 @@ const Playground = () => {
   const [showKeyboardHints, setShowKeyboardHints] = useState(false);
   const [showIntelliSense, setShowIntelliSense] = useState(false);
   const { isProcessing } = useAIStore();
-  const { activeProject, initializeSampleProjects } = useProjectStore();
+  const { activeProject, initializeSampleProjects, projects, setActiveProject } = useProjectStore();
   const { openTab } = useEditorStore();
 
-  // Initialize sample projects and open first file
+  // Initialize sample projects and set active project
   useEffect(() => {
-    initializeSampleProjects();
-  }, [initializeSampleProjects]);
+    const initialize = async () => {
+      await initializeSampleProjects();
+      
+      // If no active project is set, set the first available project as active
+      if (!activeProject && projects.length > 0) {
+        setActiveProject(projects[0].id);
+      }
+    };
+    
+    initialize();
+  }, [initializeSampleProjects, activeProject, projects, setActiveProject]);
 
   // Auto-open first file when active project changes
   useEffect(() => {
