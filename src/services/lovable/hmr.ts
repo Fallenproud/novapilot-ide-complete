@@ -1,203 +1,213 @@
 
 export interface HMRUpdate {
-  type: 'update' | 'add' | 'remove';
+  type: 'update' | 'invalidate' | 'error';
   moduleId: string;
   code?: string;
-  dependencies?: string[];
   timestamp: number;
+  error?: string;
 }
 
-export interface HMRCallback {
-  accept: (callback?: Function) => void;
-  dispose: (callback: Function) => void;
-  invalidate: () => void;
+export interface HMRAcceptCallback {
+  (dependencies: string[]): void;
+}
+
+export interface HMRDisposeCallback {
+  (): void;
 }
 
 export class HotModuleReplacementEngine {
-  private updateCallbacks: Map<string, Function[]> = new Map();
-  private disposeCallbacks: Map<string, Function[]> = new Map();
-  private moduleStates: Map<string, any> = new Map();
+  private moduleRegistry: Map<string, any> = new Map();
   private dependencyGraph: Map<string, Set<string>> = new Map();
+  private acceptCallbacks: Map<string, HMRAcceptCallback[]> = new Map();
+  private disposeCallbacks: Map<string, HMRDisposeCallback[]> = new Map();
+  private isEnabled: boolean = true;
 
   constructor() {
-    this.setupHMRAPI();
+    this.setupGlobalHMRAPI();
   }
 
-  private setupHMRAPI() {
-    // Create global HMR API
-    if (typeof window !== 'undefined') {
-      (window as any).__HMR__ = {
-        accept: (moduleId: string, callback?: Function) => {
-          this.accept(moduleId, callback);
-        },
-        dispose: (moduleId: string, callback: Function) => {
-          this.dispose(moduleId, callback);
-        },
-        invalidate: (moduleId: string) => {
-          this.invalidate(moduleId);
-        },
-        updateModule: (update: HMRUpdate) => {
-          this.updateModule(update);
-        }
-      };
-    }
+  private setupGlobalHMRAPI() {
+    // Setup HMR API on window for access from executed code
+    (window as any).__HMR__ = {
+      accept: (moduleId: string, callback?: HMRAcceptCallback) => this.accept(moduleId, callback),
+      dispose: (moduleId: string, callback: HMRDisposeCallback) => this.dispose(moduleId, callback),
+      invalidate: (moduleId: string) => this.invalidate(moduleId),
+      isEnabled: () => this.isEnabled
+    };
   }
 
-  accept(moduleId: string, callback?: Function) {
-    if (!this.updateCallbacks.has(moduleId)) {
-      this.updateCallbacks.set(moduleId, []);
+  accept(moduleId: string, callback?: HMRAcceptCallback) {
+    if (!this.acceptCallbacks.has(moduleId)) {
+      this.acceptCallbacks.set(moduleId, []);
     }
+    
     if (callback) {
-      this.updateCallbacks.get(moduleId)!.push(callback);
+      this.acceptCallbacks.get(moduleId)!.push(callback);
     }
+    
+    console.log(`[HMR] Module ${moduleId} accepted updates`);
   }
 
-  dispose(moduleId: string, callback: Function) {
+  dispose(moduleId: string, callback: HMRDisposeCallback) {
     if (!this.disposeCallbacks.has(moduleId)) {
       this.disposeCallbacks.set(moduleId, []);
     }
+    
     this.disposeCallbacks.get(moduleId)!.push(callback);
+    console.log(`[HMR] Dispose callback registered for ${moduleId}`);
   }
 
   invalidate(moduleId: string) {
-    // Mark module for re-compilation
-    this.emitUpdate({
-      type: 'update',
-      moduleId,
-      timestamp: Date.now()
-    });
+    console.log(`[HMR] Module ${moduleId} invalidated`);
+    this.cleanupModule(moduleId);
+    
+    // Emit invalidation event
+    window.dispatchEvent(new CustomEvent('hmr:invalidate', {
+      detail: { moduleId }
+    }));
   }
 
-  async updateModule(update: HMRUpdate) {
+  async updateModule(update: HMRUpdate): Promise<boolean> {
+    if (!this.isEnabled) {
+      console.warn('[HMR] Updates disabled');
+      return false;
+    }
+
     const { moduleId, code, type } = update;
-
-    try {
-      // Run dispose callbacks
-      const disposeCallbacks = this.disposeCallbacks.get(moduleId) || [];
-      disposeCallbacks.forEach(callback => {
-        try {
-          callback();
-        } catch (error) {
-          console.warn(`HMR dispose callback error for ${moduleId}:`, error);
-        }
-      });
-
-      if (type === 'update' && code) {
-        // Update module code
-        await this.replaceModule(moduleId, code);
-        
-        // Run update callbacks
-        const updateCallbacks = this.updateCallbacks.get(moduleId) || [];
-        updateCallbacks.forEach(callback => {
-          try {
-            callback();
-          } catch (error) {
-            console.warn(`HMR update callback error for ${moduleId}:`, error);
-          }
-        });
-
-        // Update dependent modules
-        await this.updateDependents(moduleId);
-      }
-
-      this.emitUpdate(update);
-    } catch (error) {
-      console.error(`HMR update failed for ${moduleId}:`, error);
-      // Fall back to full reload
-      this.emitFullReload();
-    }
-  }
-
-  private async replaceModule(moduleId: string, code: string) {
-    // Save current state
-    const currentState = this.moduleStates.get(moduleId);
     
-    // Execute new module code
+    console.log(`[HMR] Updating module: ${moduleId}`);
+
     try {
-      const moduleFunction = new Function('module', 'exports', 'require', '__HMR__', code);
-      const newModule = { exports: {} };
+      // Run dispose callbacks before update
+      await this.runDisposeCallbacks(moduleId);
       
-      moduleFunction(
-        newModule,
-        newModule.exports,
-        (id: string) => this.requireModule(id),
-        (window as any).__HMR__
-      );
+      if (type === 'update' && code) {
+        // Update module registry
+        this.moduleRegistry.set(moduleId, {
+          code,
+          timestamp: update.timestamp,
+          exports: null // Will be populated when executed
+        });
 
-      // If module has HMR accept, merge state
-      if (currentState && newModule.exports) {
-        this.mergeModuleState(newModule.exports, currentState);
+        // Run accept callbacks
+        await this.runAcceptCallbacks(moduleId);
+        
+        // Emit update event
+        window.dispatchEvent(new CustomEvent('hmr:update', {
+          detail: { moduleId, code, timestamp: update.timestamp }
+        }));
+        
+        console.log(`[HMR] Module ${moduleId} updated successfully`);
+        return true;
+      } else if (type === 'invalidate') {
+        this.invalidate(moduleId);
+        return true;
+      } else if (type === 'error') {
+        console.error(`[HMR] Update error for ${moduleId}:`, update.error);
+        
+        // Emit error event
+        window.dispatchEvent(new CustomEvent('hmr:error', {
+          detail: { moduleId, error: update.error }
+        }));
+        
+        return false;
       }
-
-      this.moduleStates.set(moduleId, newModule.exports);
+      
+      return false;
     } catch (error) {
-      console.error(`Module replacement failed for ${moduleId}:`, error);
-      throw error;
+      console.error(`[HMR] Failed to update module ${moduleId}:`, error);
+      return false;
     }
   }
 
-  private mergeModuleState(newExports: any, oldState: any) {
-    // Preserve React component state and other stateful objects
-    if (typeof newExports === 'function' && oldState) {
-      // For React components, try to preserve state
-      if (newExports.prototype && newExports.prototype.render) {
-        // Class component
-        Object.keys(oldState).forEach(key => {
-          if (key.startsWith('_') || key === 'state') {
-            newExports.prototype[key] = oldState[key];
-          }
-        });
+  private async runDisposeCallbacks(moduleId: string) {
+    const callbacks = this.disposeCallbacks.get(moduleId) || [];
+    
+    for (const callback of callbacks) {
+      try {
+        await callback();
+      } catch (error) {
+        console.error(`[HMR] Dispose callback error for ${moduleId}:`, error);
+      }
+    }
+    
+    // Clear callbacks after running
+    this.disposeCallbacks.delete(moduleId);
+  }
+
+  private async runAcceptCallbacks(moduleId: string) {
+    const callbacks = this.acceptCallbacks.get(moduleId) || [];
+    const dependencies = Array.from(this.dependencyGraph.get(moduleId) || []);
+    
+    for (const callback of callbacks) {
+      try {
+        await callback(dependencies);
+      } catch (error) {
+        console.error(`[HMR] Accept callback error for ${moduleId}:`, error);
       }
     }
   }
 
-  private async updateDependents(moduleId: string) {
-    const dependents = this.getDependents(moduleId);
+  private cleanupModule(moduleId: string) {
+    // Remove from registry
+    this.moduleRegistry.delete(moduleId);
     
-    for (const dependent of dependents) {
-      // Check if dependent accepts HMR updates
-      if (this.updateCallbacks.has(dependent)) {
-        await this.updateModule({
-          type: 'update',
-          moduleId: dependent,
-          timestamp: Date.now()
-        });
-      }
+    // Clear callbacks
+    this.acceptCallbacks.delete(moduleId);
+    this.disposeCallbacks.delete(moduleId);
+    
+    // Remove from dependency graph
+    this.dependencyGraph.delete(moduleId);
+    
+    // Remove as dependency from other modules
+    for (const [otherId, deps] of this.dependencyGraph.entries()) {
+      deps.delete(moduleId);
     }
-  }
-
-  private getDependents(moduleId: string): string[] {
-    const dependents: string[] = [];
-    
-    for (const [module, deps] of this.dependencyGraph.entries()) {
-      if (deps.has(moduleId)) {
-        dependents.push(module);
-      }
-    }
-    
-    return dependents;
-  }
-
-  private requireModule(id: string): any {
-    return this.moduleStates.get(id) || {};
-  }
-
-  private emitUpdate(update: HMRUpdate) {
-    window.dispatchEvent(new CustomEvent('hmr:update', { detail: update }));
-  }
-
-  private emitFullReload() {
-    window.dispatchEvent(new CustomEvent('hmr:full-reload'));
   }
 
   updateDependencyGraph(moduleId: string, dependencies: string[]) {
     this.dependencyGraph.set(moduleId, new Set(dependencies));
   }
 
+  getDependents(moduleId: string): string[] {
+    const dependents: string[] = [];
+    
+    for (const [otherId, deps] of this.dependencyGraph.entries()) {
+      if (deps.has(moduleId)) {
+        dependents.push(otherId);
+      }
+    }
+    
+    return dependents;
+  }
+
+  getModule(moduleId: string): any {
+    return this.moduleRegistry.get(moduleId);
+  }
+
+  hasModule(moduleId: string): boolean {
+    return this.moduleRegistry.has(moduleId);
+  }
+
+  enable() {
+    this.isEnabled = true;
+    console.log('[HMR] Hot Module Replacement enabled');
+  }
+
+  disable() {
+    this.isEnabled = false;
+    console.log('[HMR] Hot Module Replacement disabled');
+  }
+
   dispose() {
-    this.updateCallbacks.clear();
-    this.disposeCallbacks.clear();
-    this.moduleStates.clear();
-    this.dependencyGraph.clear();
+    // Cleanup all modules
+    for (const moduleId of this.moduleRegistry.keys()) {
+      this.cleanupModule(moduleId);
+    }
+    
+    // Remove global API
+    delete (window as any).__HMR__;
+    
+    console.log('[HMR] Hot Module Replacement disposed');
   }
 }

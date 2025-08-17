@@ -1,5 +1,7 @@
+import { LovableLanguageService, CompletionItem, Diagnostic, HoverInfo, DiagnosticSeverity } from './languageService';
 
-import { LovableLanguageService, CompletionItem, Diagnostic, HoverInfo } from './languageService';
+// Re-export types that other modules need
+export { Diagnostic, DiagnosticSeverity } from './languageService';
 
 export interface CodeAction {
   title: string;

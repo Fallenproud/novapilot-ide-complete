@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -29,6 +28,9 @@ interface ProjectState {
   activeProject: Project | null;
   activeFile: ProjectFile | null;
   
+  // Computed property for all files across projects
+  allFiles: ProjectFile[];
+  
   // Actions
   createProject: (name: string, description: string) => void;
   deleteProject: (id: string) => void;
@@ -48,6 +50,12 @@ export const useProjectStore = create<ProjectState>()(
       projects: [],
       activeProject: null,
       activeFile: null,
+
+      // Computed property that returns all files from the active project
+      get allFiles() {
+        const state = get();
+        return state.activeProject?.files || [];
+      },
 
       createProject: (name: string, description: string) => {
         const newProject: Project = {
