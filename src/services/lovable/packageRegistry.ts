@@ -52,9 +52,9 @@ export class VirtualPackageRegistry {
       description: 'Utility library',
       exports: {
         default: this.createLodashSubset(),
-        map: (arr: any[], fn: Function) => arr.map(fn),
-        filter: (arr: any[], fn: Function) => arr.filter(fn),
-        find: (arr: any[], fn: Function) => arr.find(fn),
+        map: (arr: any[], fn: (value: any, index: number, array: any[]) => any) => arr.map(fn),
+        filter: (arr: any[], fn: (value: any, index: number, array: any[]) => boolean) => arr.filter(fn),
+        find: (arr: any[], fn: (value: any, index: number, array: any[]) => boolean) => arr.find(fn),
         isEmpty: (value: any) => {
           if (value == null) return true;
           if (Array.isArray(value) || typeof value === 'string') return value.length === 0;
@@ -80,9 +80,9 @@ export class VirtualPackageRegistry {
 
   private createLodashSubset() {
     return {
-      map: (arr: any[], fn: Function) => arr.map(fn),
-      filter: (arr: any[], fn: Function) => arr.filter(fn),
-      find: (arr: any[], fn: Function) => arr.find(fn),
+      map: (arr: any[], fn: (value: any, index: number, array: any[]) => any) => arr.map(fn),
+      filter: (arr: any[], fn: (value: any, index: number, array: any[]) => boolean) => arr.filter(fn),
+      find: (arr: any[], fn: (value: any, index: number, array: any[]) => boolean) => arr.find(fn),
       isEmpty: (value: any) => {
         if (value == null) return true;
         if (Array.isArray(value) || typeof value === 'string') return value.length === 0;

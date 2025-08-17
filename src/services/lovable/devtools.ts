@@ -18,10 +18,16 @@ export class LovableDevTools {
   private consoleMessages: ConsoleMessage[] = [];
   private performanceMetrics: PerformanceMetric[] = [];
   private isCapturing = false;
-  private originalConsole: Console;
+  private originalConsole: Partial<Console>;
 
   constructor() {
-    this.originalConsole = { ...console };
+    this.originalConsole = {
+      log: console.log.bind(console),
+      warn: console.warn.bind(console),
+      error: console.error.bind(console),
+      info: console.info.bind(console),
+      debug: console.debug.bind(console)
+    };
     this.setupConsoleCapture();
     this.setupPerformanceMonitoring();
   }
@@ -30,13 +36,15 @@ export class LovableDevTools {
     const levels: Array<keyof Console> = ['log', 'warn', 'error', 'info', 'debug'];
     
     levels.forEach(level => {
-      const original = console[level] as Function;
-      console[level] = (...args: any[]) => {
+      const original = this.originalConsole[level] as Function;
+      (console as any)[level] = (...args: any[]) => {
         // Call original console method
-        original.apply(console, args);
+        if (original) {
+          original(...args);
+        }
         
         if (this.isCapturing) {
-          this.captureConsoleMessage(level as any, args);
+          this.captureConsoleMessage(level as ConsoleMessage['level'], args);
         }
       };
     });
@@ -202,7 +210,9 @@ export class LovableDevTools {
     
     // Restore original console
     Object.keys(this.originalConsole).forEach(key => {
-      (console as any)[key] = (this.originalConsole as any)[key];
+      if (this.originalConsole[key as keyof Console]) {
+        (console as any)[key] = this.originalConsole[key as keyof Console];
+      }
     });
   }
 }
