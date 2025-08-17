@@ -1,40 +1,48 @@
 
-import { useEffect, useRef } from 'react';
-import { useAIStore } from '@/stores/aiStore';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  User, 
-  Bot, 
-  AlertCircle,
-  CheckCircle,
-  Clock
-} from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Bot, User, Clock } from 'lucide-react';
+import { useAIStore } from '@/stores/aiStore';
+
+interface Message {
+  id: string;
+  type: 'user' | 'ai' | 'system';
+  content: string;
+  timestamp: Date;
+  status?: 'sending' | 'sent' | 'error';
+}
 
 const ChatMessages = () => {
-  const { messages } = useAIStore();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { messages = [], isProcessing } = useAIStore();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const getStepColor = (step: string) => {
-    switch (step) {
-      case 'request': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-      case 'analysis': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
-      case 'planning': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'generation': return 'bg-green-500/20 text-green-300 border-green-500/30';
-      case 'execution': return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
-      case 'deployment': return 'bg-pink-500/20 text-pink-300 border-pink-500/30';
-      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+  // Sample messages for demonstration
+  const sampleMessages: Message[] = [
+    {
+      id: '1',
+      type: 'system',
+      content: 'AI Workflow initialized. Ready to assist with your development needs.',
+      timestamp: new Date(Date.now() - 60000),
+      status: 'sent'
+    },
+    {
+      id: '2',
+      type: 'user',
+      content: 'Create a modern web application with user authentication and dashboard',
+      timestamp: new Date(Date.now() - 30000),
+      status: 'sent'
+    },
+    {
+      id: '3',
+      type: 'ai',
+      content: 'I\'ll help you create a modern web application with authentication and dashboard. Starting with the project structure and core components...',
+      timestamp: new Date(Date.now() - 15000),
+      status: 'sent'
     }
-  };
+  ];
+
+  const allMessages = messages.length > 0 ? messages : sampleMessages;
 
   const getMessageIcon = (type: string) => {
     switch (type) {
@@ -42,82 +50,101 @@ const ChatMessages = () => {
         return <User className="h-4 w-4" />;
       case 'ai':
         return <Bot className="h-4 w-4" />;
-      case 'system':
-        return <AlertCircle className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
     }
   };
 
-  if (messages.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-center p-8">
-        <div>
-          <Bot className="h-12 w-12 text-[#30363D] mx-auto mb-3" />
-          <h3 className="text-lg font-medium text-[#8B949E] mb-2">
-            Ready to help you build
-          </h3>
-          <p className="text-sm text-[#6E7681]">
-            Enter a prompt above to start generating your application
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const getMessageBg = (type: string) => {
+    switch (type) {
+      case 'user':
+        return 'bg-[#1F6FEB]/10 border-[#1F6FEB]/20';
+      case 'ai':
+        return 'bg-[#21262D] border-[#30363D]';
+      default:
+        return 'bg-[#161B22] border-[#21262D]';
+    }
+  };
 
   return (
-    <ScrollArea className="h-full">
-      <div className="p-4 space-y-3">
-        {messages.map((message) => (
-          <Card
-            key={message.id}
-            className={`p-3 border transition-all duration-200 ${
-              message.type === 'user' 
-                ? 'bg-[#1F6FEB]/10 border-[#1F6FEB]/30 ml-6' 
-                : message.type === 'system'
-                ? 'bg-red-500/10 border-red-500/30'
-                : 'bg-[#161B22] border-[#30363D] mr-6'
-            }`}
-          >
-            <div className="flex items-start space-x-3">
-              <div className={`p-2 rounded-full flex-shrink-0 ${
-                message.type === 'user' 
-                  ? 'bg-[#1F6FEB] text-white' 
-                  : message.type === 'system'
-                  ? 'bg-red-500 text-white'
-                  : 'bg-[#21262D] text-[#8B949E]'
-              }`}>
-                {getMessageIcon(message.type)}
-              </div>
+    <div className="h-full flex flex-col">
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {allMessages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex items-start space-x-3 p-3 rounded-lg border ${getMessageBg(message.type)}`}
+            >
+              <Avatar className="h-6 w-6 flex-shrink-0">
+                <AvatarFallback className="bg-[#30363D] text-[#F0F6FC] text-xs">
+                  {getMessageIcon(message.type)}
+                </AvatarFallback>
+              </Avatar>
               
-              <div className="flex-1 space-y-2 min-w-0">
-                <div className="flex items-center space-x-2 flex-wrap">
-                  <span className="text-sm font-medium text-[#F0F6FC]">
-                    {message.type === 'user' ? 'You' : message.type === 'system' ? 'System' : 'NovaPilot AI'}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-xs font-medium text-[#F0F6FC] capitalize">
+                    {message.type === 'ai' ? 'NovaPilot' : message.type}
                   </span>
-                  {message.step && (
+                  <span className="text-xs text-[#8B949E]">
+                    {message.timestamp.toLocaleTimeString([], { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </span>
+                  {message.status && (
                     <Badge 
-                      variant="outline" 
-                      className={`text-xs px-2 py-0.5 ${getStepColor(message.step)}`}
+                      variant="secondary" 
+                      className={`text-xs px-1.5 py-0.5 ${
+                        message.status === 'error' 
+                          ? 'bg-red-500/10 text-red-400 border-red-500/20' 
+                          : message.status === 'sending'
+                          ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                          : 'bg-green-500/10 text-green-400 border-green-500/20'
+                      }`}
                     >
-                      {message.step}
+                      {message.status}
                     </Badge>
                   )}
-                  <span className="text-xs text-[#6E7681]">
-                    {message.timestamp.toLocaleTimeString()}
-                  </span>
                 </div>
                 
-                <div className="text-sm text-[#F0F6FC] whitespace-pre-wrap break-words">
+                <div className="text-sm text-[#F0F6FC] leading-relaxed break-words">
                   {message.content}
                 </div>
               </div>
             </div>
-          </Card>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-    </ScrollArea>
+          ))}
+          
+          {isProcessing && (
+            <div className="flex items-start space-x-3 p-3 rounded-lg border bg-[#21262D] border-[#30363D]">
+              <Avatar className="h-6 w-6 flex-shrink-0">
+                <AvatarFallback className="bg-[#30363D] text-[#F0F6FC] text-xs">
+                  <Bot className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-xs font-medium text-[#F0F6FC]">NovaPilot</span>
+                  <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-[#1F6FEB]/10 text-[#1F6FEB] border-[#1F6FEB]/20">
+                    processing
+                  </Badge>
+                </div>
+                
+                <div className="text-sm text-[#8B949E] flex items-center space-x-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-[#1F6FEB] rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-[#1F6FEB] rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-[#1F6FEB] rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  </div>
+                  <span>Analyzing your request...</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
   );
 };
 

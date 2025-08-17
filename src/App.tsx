@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
@@ -20,7 +21,7 @@ function App() {
       <Router>
         <div className="min-h-screen bg-background font-sans antialiased">
           <Header />
-          <main>
+          <main className="flex-1">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/projects" element={<Projects />} />
