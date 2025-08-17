@@ -1,11 +1,11 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { AlertCircle, Loader2, Play, Square, RefreshCw } from "lucide-react";
+import { AlertCircle, Loader2, Play, Square, RefreshCw, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProjectFile } from "@/stores/projectStore";
 import { VirtualFileSystem } from "@/services/virtualFileSystem";
-import { LovableRuntime } from "@/services/lovable/runtime";
-import { LovableCompiler, CompilationResult } from "@/services/lovable/compiler";
+import { EnhancedLovableRuntime } from "@/services/lovable/enhancedRuntime";
+import DevToolsPanel from "./DevToolsPanel";
 
 interface LovablePreviewRendererProps {
   activeFile: ProjectFile | null;
@@ -27,96 +27,97 @@ const LovablePreviewRenderer = ({
   const [isRunning, setIsRunning] = useState(false);
   const [isCompiling, setIsCompiling] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [compilationResult, setCompilationResult] = useState<CompilationResult | null>(null);
+  const [showDevTools, setShowDevTools] = useState(false);
   const [consoleOutput, setConsoleOutput] = useState<Array<{level: string, args: any[], timestamp: number}>>([]);
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const runtimeRef = useRef<LovableRuntime | null>(null);
-  const compilerRef = useRef<LovableCompiler | null>(null);
+  const runtimeRef = useRef<EnhancedLovableRuntime | null>(null);
   const vfsRef = useRef<VirtualFileSystem | null>(null);
 
-  // Initialize Lovable systems
+  // Initialize Enhanced Lovable Runtime
   useEffect(() => {
     if (allFiles.length > 0) {
       vfsRef.current = new VirtualFileSystem(allFiles);
-      compilerRef.current = new LovableCompiler();
-      runtimeRef.current = new LovableRuntime(vfsRef.current, {
+      runtimeRef.current = new EnhancedLovableRuntime(vfsRef.current, {
         enableHMR: true,
+        enableDevTools: true,
+        enablePackageRegistry: true,
         enableTypeChecking: true,
         sandboxed: true
       });
 
-      // Listen for console events
-      const handleConsoleEvent = (event: CustomEvent) => {
-        setConsoleOutput(prev => [...prev, event.detail]);
+      // Listen for runtime events
+      const handleRuntimeError = (event: CustomEvent) => {
+        setError(`Runtime Error: ${event.detail.args.join(' ')}`);
       };
 
-      window.addEventListener('lovable:console', handleConsoleEvent as EventListener);
+      const handleHMRUpdate = (event: CustomEvent) => {
+        console.log('HMR Update:', event.detail);
+        // Automatically refresh preview on HMR update
+        if (isRunning) {
+          compileAndRun();
+        }
+      };
+
+      const handleHMRFullReload = () => {
+        console.log('HMR Full Reload');
+        compileAndRun();
+      };
+
+      window.addEventListener('runtime:error', handleRuntimeError as EventListener);
+      window.addEventListener('hmr:update', handleHMRUpdate as EventListener);
+      window.addEventListener('hmr:full-reload', handleHMRFullReload);
       
       return () => {
-        window.removeEventListener('lovable:console', handleConsoleEvent as EventListener);
+        window.removeEventListener('runtime:error', handleRuntimeError as EventListener);
+        window.removeEventListener('hmr:update', handleHMRUpdate as EventListener);
+        window.removeEventListener('hmr:full-reload', handleHMRFullReload);
         runtimeRef.current?.dispose();
-        compilerRef.current?.dispose();
       };
     }
   }, [allFiles]);
 
+  // Auto-compile on file changes with HMR
+  useEffect(() => {
+    if (activeFile && isRunning && runtimeRef.current) {
+      // Emit file change event for HMR
+      window.dispatchEvent(new CustomEvent('vfs:file-changed', {
+        detail: {
+          filePath: activeFile.path,
+          content: activeFile.content
+        }
+      }));
+    }
+  }, [activeFile?.content, isRunning]);
+
   const compileAndRun = useCallback(async () => {
-    if (!activeFile || !compilerRef.current || !runtimeRef.current) return;
+    if (!activeFile || !runtimeRef.current) return;
 
     setIsCompiling(true);
     setError(null);
     setConsoleOutput([]);
 
     try {
-      // Compile the active file
-      let result: CompilationResult;
+      // Execute the module
+      const moduleExports = await runtimeRef.current.executeModule(activeFile.path);
       
-      if (activeFile.language === 'typescript' || activeFile.language === 'tsx') {
-        result = await compilerRef.current.compileTypeScript(activeFile.content, activeFile.path);
-      } else if (activeFile.language === 'javascript' || activeFile.language === 'jsx') {
-        result = await compilerRef.current.compileJavaScript(activeFile.content, activeFile.path);
-      } else if (activeFile.language === 'css') {
-        result = await compilerRef.current.compileCSS(activeFile.content, activeFile.path);
-      } else {
-        throw new Error(`Unsupported file type: ${activeFile.language}`);
-      }
-
-      setCompilationResult(result);
-
-      if (result.errors.length > 0) {
-        setError(result.errors.map(e => e.message).join('\n'));
-        return;
-      }
-
-      // Update VFS with compiled code
-      vfsRef.current?.updateFile(activeFile.path, result.code);
-
-      // Execute in runtime
-      if (activeFile.language !== 'css') {
-        const moduleExports = await runtimeRef.current.executeModule(activeFile.path);
-        
-        // Create preview HTML
-        const previewHtml = createLovablePreviewHTML(result.code, activeFile.language, moduleExports);
-        updatePreview(previewHtml);
-      } else {
-        // Handle CSS files
-        const previewHtml = createCSSPreview(result.code);
-        updatePreview(previewHtml);
-      }
+      // Create preview HTML
+      const previewHtml = createEnhancedPreviewHTML(activeFile, moduleExports);
+      updatePreview(previewHtml);
 
       setIsRunning(true);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Compilation failed');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Execution failed');
+      console.error('Enhanced Lovable execution error:', err);
     } finally {
       setIsCompiling(false);
     }
   }, [activeFile]);
 
-  const createLovablePreviewHTML = (compiledCode: string, language: string, moduleExports: any): string => {
-    const isReactComponent = language.includes('jsx') || language.includes('tsx') || 
-                            compiledCode.includes('React.createElement') || 
-                            compiledCode.includes('JSX');
+  const createEnhancedPreviewHTML = (file: ProjectFile, moduleExports: any): string => {
+    const isReactComponent = file.language.includes('jsx') || file.language.includes('tsx') || 
+                            file.content.includes('React.createElement') || 
+                            file.content.includes('JSX');
 
     if (isReactComponent) {
       return `
@@ -142,52 +143,44 @@ const LovablePreviewRenderer = ({
       margin: 20px;
       border: 1px solid #f5c6cb;
     }
-    .lovable-console {
+    .hmr-indicator {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-height: 200px;
-      background: #1e1e1e;
-      color: #fff;
-      overflow-y: auto;
-      border-top: 1px solid #333;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-    }
-    .lovable-console-entry {
+      top: 10px;
+      right: 10px;
+      background: #28a745;
+      color: white;
       padding: 4px 8px;
-      border-bottom: 1px solid #333;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
     }
-    .lovable-console-log { color: #fff; }
-    .lovable-console-error { color: #ff6b6b; }
-    .lovable-console-warn { color: #ffd93d; }
+    .hmr-indicator.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
-  <div id="console" class="lovable-console" style="display: none;"></div>
+  <div id="hmr-indicator" class="hmr-indicator">🔥 HMR Updated</div>
   
   <script>
-    // Console capture
-    const consoleDiv = document.getElementById('console');
-    const originalConsole = { ...console };
-    
-    ['log', 'error', 'warn', 'info'].forEach(method => {
-      console[method] = (...args) => {
-        originalConsole[method](...args);
-        
-        const entry = document.createElement('div');
-        entry.className = 'lovable-console-entry lovable-console-' + method;
-        entry.textContent = args.join(' ');
-        consoleDiv.appendChild(entry);
-        consoleDiv.style.display = 'block';
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
-      };
+    // HMR indicator
+    let hmrTimeout;
+    window.addEventListener('message', function(event) {
+      if (event.data.type === 'hmr-update') {
+        const indicator = document.getElementById('hmr-indicator');
+        indicator.classList.add('show');
+        clearTimeout(hmrTimeout);
+        hmrTimeout = setTimeout(() => {
+          indicator.classList.remove('show');
+        }, 2000);
+      }
     });
 
-    // Error boundary
-    class LovableErrorBoundary extends React.Component {
+    // Enhanced Error Boundary with HMR support
+    class EnhancedErrorBoundary extends React.Component {
       constructor(props) {
         super(props);
         this.state = { hasError: false, error: null };
@@ -198,7 +191,21 @@ const LovablePreviewRenderer = ({
       }
 
       componentDidCatch(error, errorInfo) {
-        console.error('Lovable Runtime Error:', error, errorInfo);
+        console.error('Enhanced Lovable Runtime Error:', error, errorInfo);
+        
+        // Send error to parent
+        window.parent.postMessage({
+          type: 'runtime-error',
+          error: error.message,
+          stack: error.stack
+        }, '*');
+      }
+
+      componentDidUpdate(prevProps) {
+        // Reset error boundary on HMR updates
+        if (this.state.hasError && prevProps.children !== this.props.children) {
+          this.setState({ hasError: false, error: null });
+        }
       }
 
       render() {
@@ -206,7 +213,19 @@ const LovablePreviewRenderer = ({
           return React.createElement('div', { className: 'lovable-error' }, [
             React.createElement('h3', { key: 'title' }, 'Runtime Error'),
             React.createElement('p', { key: 'message' }, this.state.error?.message || 'An error occurred'),
-            React.createElement('pre', { key: 'stack' }, this.state.error?.stack || '')
+            React.createElement('button', { 
+              key: 'retry',
+              onClick: () => this.setState({ hasError: false, error: null }),
+              style: { 
+                background: '#007bff', 
+                color: 'white', 
+                border: 'none', 
+                padding: '8px 16px', 
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginTop: '10px'
+              }
+            }, 'Retry')
           ]);
         }
         return this.props.children;
@@ -214,41 +233,44 @@ const LovablePreviewRenderer = ({
     }
 
     try {
-      // Execute compiled code
-      ${compiledCode}
-      
-      // Try to render if it's a React component
       const root = ReactDOM.createRoot(document.getElementById('root'));
       
       // Try to find and render the main component
       let ComponentToRender = null;
       
+      // Check for common export patterns
       if (typeof App !== 'undefined') {
         ComponentToRender = App;
       } else if (typeof Component !== 'undefined') {
         ComponentToRender = Component;
+      } else if (typeof ${file.name.replace(/\.[^/.]+$/, "")} !== 'undefined') {
+        ComponentToRender = ${file.name.replace(/\.[^/.]+$/, "")};
       } else {
-        // Create a default component showing the code execution
-        ComponentToRender = () => React.createElement('div', { 
-          style: { padding: '20px' } 
-        }, [
-          React.createElement('h2', { key: 'title' }, 'Code Executed Successfully'),
-          React.createElement('p', { key: 'desc' }, 'Your code has been executed. Check the console for output.'),
-          React.createElement('pre', { 
-            key: 'code',
-            style: { 
-              background: '#f8f9fa', 
-              padding: '16px', 
-              borderRadius: '8px',
-              overflow: 'auto',
-              fontSize: '14px'
-            }
-          }, ${JSON.stringify(compiledCode)})
-        ]);
+        // Create a component from the module exports
+        ComponentToRender = function() {
+          return React.createElement('div', { 
+            style: { padding: '20px' } 
+          }, [
+            React.createElement('h2', { key: 'title' }, 'Enhanced Lovable Preview'),
+            React.createElement('p', { key: 'desc' }, 'Your code is running with HMR support!'),
+            React.createElement('div', {
+              key: 'status',
+              style: {
+                background: '#e7f3ff',
+                padding: '12px',
+                borderLeft: '4px solid #0066cc',
+                marginTop: '16px'
+              }
+            }, [
+              React.createElement('strong', { key: 'label' }, 'Status: '),
+              'Module executed successfully with Enhanced Runtime'
+            ])
+          ]);
+        };
       }
       
       root.render(
-        React.createElement(LovableErrorBoundary, null,
+        React.createElement(EnhancedErrorBoundary, null,
           React.createElement(ComponentToRender)
         )
       );
@@ -262,7 +284,7 @@ const LovablePreviewRenderer = ({
 </body>
 </html>`;
     } else {
-      // JavaScript execution
+      // JavaScript/other file execution
       return `
 <!DOCTYPE html>
 <html>
@@ -283,9 +305,19 @@ const LovablePreviewRenderer = ({
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       min-height: 200px;
     }
+    .enhanced-badge {
+      background: #28a745;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
+  <div class="enhanced-badge">Enhanced Lovable Runtime</div>
   <div id="output"></div>
   <script>
     const output = document.getElementById('output');
@@ -305,7 +337,11 @@ const LovablePreviewRenderer = ({
     };
     
     try {
-      ${compiledCode}
+      // Module exports are available here
+      if (typeof moduleExports !== 'undefined') {
+        console.log('Module executed successfully');
+        console.log('Exports:', moduleExports);
+      }
     } catch (error) {
       console.error(error.message);
     }
@@ -315,43 +351,16 @@ const LovablePreviewRenderer = ({
     }
   };
 
-  const createCSSPreview = (css: string): string => {
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { 
-      margin: 0; 
-      padding: 20px; 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    }
-    ${css}
-  </style>
-</head>
-<body>
-  <div class="css-preview-container">
-    <h1>CSS Preview</h1>
-    <p>This paragraph demonstrates your CSS styles.</p>
-    <div class="demo-section">
-      <button class="btn">Sample Button</button>
-      <div class="box">Sample Box</div>
-      <ul class="list">
-        <li>List item 1</li>
-        <li>List item 2</li>
-        <li>List item 3</li>
-      </ul>
-    </div>
-  </div>
-</body>
-</html>`;
-  };
-
   const updatePreview = (html: string) => {
     if (iframeRef.current) {
       iframeRef.current.srcdoc = html;
+      
+      // Send HMR update message to iframe
+      setTimeout(() => {
+        if (iframeRef.current?.contentWindow) {
+          iframeRef.current.contentWindow.postMessage({ type: 'hmr-update' }, '*');
+        }
+      }, 100);
     }
   };
 
@@ -364,7 +373,8 @@ const LovablePreviewRenderer = ({
   };
 
   const handleRefresh = () => {
-    if (isRunning) {
+    if (isRunning && runtimeRef.current) {
+      runtimeRef.current.clearCache();
       compileAndRun();
     }
   };
@@ -373,16 +383,16 @@ const LovablePreviewRenderer = ({
     return (
       <div className={`flex items-center justify-center bg-background ${className}`}>
         <div className="text-center text-muted-foreground">
-          <div className="text-sm">Lovable Preview Hidden</div>
-          <div className="text-xs mt-1">Press the play button to run your code</div>
+          <div className="text-sm">Enhanced Lovable Preview Hidden</div>
+          <div className="text-xs mt-1">Press the play button to run with HMR</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Lovable Controls */}
+    <div className={`relative flex flex-col ${className}`}>
+      {/* Enhanced Controls */}
       <div className="absolute top-2 right-2 z-10 flex space-x-2">
         <Button
           variant="outline"
@@ -399,38 +409,39 @@ const LovablePreviewRenderer = ({
             <Play className="h-4 w-4" />
           )}
           <span className="ml-1">
-            {isCompiling ? 'Compiling' : isRunning ? 'Stop' : 'Run'}
+            {isCompiling ? 'Compiling' : isRunning ? 'Stop' : 'Run Enhanced'}
           </span>
         </Button>
         
         {isRunning && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="bg-background/80 backdrop-blur-sm"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              className="bg-background/80 backdrop-blur-sm"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDevTools(!showDevTools)}
+              className="bg-background/80 backdrop-blur-sm"
+            >
+              <Bug className="h-4 w-4" />
+            </Button>
+          </>
         )}
       </div>
-
-      {/* Compilation Status */}
-      {compilationResult && compilationResult.warnings.length > 0 && (
-        <div className="absolute top-12 right-2 z-10 bg-yellow-100 border border-yellow-300 rounded p-2 text-xs">
-          <div className="font-medium">Warnings:</div>
-          {compilationResult.warnings.map((warning, i) => (
-            <div key={i}>{warning.message}</div>
-          ))}
-        </div>
-      )}
 
       {/* Error Display */}
       {error && (
         <div className={`flex items-center justify-center bg-background ${className}`}>
           <div className="text-center text-destructive p-6 max-w-md">
             <AlertCircle className="h-12 w-12 mx-auto mb-3" />
-            <div className="text-lg font-medium mb-2">Lovable Compilation Error</div>
+            <div className="text-lg font-medium mb-2">Enhanced Runtime Error</div>
             <div className="text-sm bg-destructive/10 p-3 rounded-md whitespace-pre-wrap">
               {error}
             </div>
@@ -448,26 +459,22 @@ const LovablePreviewRenderer = ({
 
       {/* Preview Frame */}
       {!error && (
-        <iframe
-          ref={iframeRef}
-          className="w-full h-full border-0 bg-background rounded-md"
-          title="Lovable Live Preview"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        />
-      )}
-
-      {/* Console Output (if any) */}
-      {consoleOutput.length > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 max-h-32 bg-gray-900 text-white text-xs overflow-y-auto">
-          {consoleOutput.map((entry, i) => (
-            <div key={i} className={`p-2 border-b border-gray-700 ${
-              entry.level === 'error' ? 'text-red-400' : 
-              entry.level === 'warn' ? 'text-yellow-400' : 'text-white'
-            }`}>
-              <span className="opacity-60">[{new Date(entry.timestamp).toLocaleTimeString()}]</span>{' '}
-              {entry.args.join(' ')}
-            </div>
-          ))}
+        <div className="flex-1 flex flex-col">
+          <iframe
+            ref={iframeRef}
+            className="flex-1 w-full border-0 bg-background rounded-md"
+            title="Enhanced Lovable Live Preview"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          />
+          
+          {/* DevTools Panel */}
+          {showDevTools && (
+            <DevToolsPanel
+              isVisible={showDevTools}
+              onToggle={() => setShowDevTools(false)}
+              className="h-64"
+            />
+          )}
         </div>
       )}
     </div>
