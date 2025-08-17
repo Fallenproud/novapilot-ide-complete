@@ -1,22 +1,59 @@
 
 import { HotModuleReplacementEngine } from './hmr';
+import { VirtualFileSystem } from '../virtualFileSystem';
 
 export class EnhancedRuntime {
   private performanceMonitor: PerformanceMonitor;
   private memoryProfiler: MemoryProfiler;
   private errorTracker: ErrorTracker;
   private hotReload: HotModuleReplacementEngine;
+  private vfs: VirtualFileSystem | null = null;
+  private moduleCache: Map<string, any> = new Map();
 
-  constructor() {
+  constructor(vfs?: VirtualFileSystem, config?: any) {
     this.performanceMonitor = new PerformanceMonitor();
     this.memoryProfiler = new MemoryProfiler();
     this.errorTracker = new ErrorTracker();
     this.hotReload = new HotModuleReplacementEngine();
+    
+    if (vfs) {
+      this.vfs = vfs;
+    }
   }
 
   start() {
     console.log('Enhanced runtime started');
     this.hotReload.enable();
+  }
+
+  async executeModule(moduleId: string): Promise<any> {
+    if (!this.vfs) {
+      throw new Error('VirtualFileSystem not initialized');
+    }
+
+    // Check cache first
+    if (this.moduleCache.has(moduleId)) {
+      return this.moduleCache.get(moduleId);
+    }
+
+    const file = this.vfs.getFile(moduleId);
+    if (!file) {
+      throw new Error(`Module not found: ${moduleId}`);
+    }
+
+    try {
+      // Simple module execution - just return the file content for now
+      const result = await this.execute(file.content, {});
+      this.moduleCache.set(moduleId, result);
+      return result;
+    } catch (error) {
+      console.error(`Error executing module ${moduleId}:`, error);
+      throw error;
+    }
+  }
+
+  clearCache() {
+    this.moduleCache.clear();
   }
 
   async execute(code: string, context: any) {
@@ -44,6 +81,7 @@ export class EnhancedRuntime {
     this.memoryProfiler.dispose();
     this.errorTracker.dispose();
     this.hotReload.disposeEngine();
+    this.moduleCache.clear();
   }
 }
 
