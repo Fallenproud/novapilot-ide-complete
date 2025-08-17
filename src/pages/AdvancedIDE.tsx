@@ -223,9 +223,8 @@ const AdvancedIDE = () => {
   );
 
   return (
-    <CodeIntelligenceProvider>
-      <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
-        {/* Advanced Toolbar */}
+    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
+      {/* Advanced Toolbar */}
         <div className="bg-card border-b border-border px-3 py-2 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -361,11 +360,13 @@ const AdvancedIDE = () => {
                 </div>
 
                 {/* Editor Area */}
-                <div className="flex-1 relative">
+                <div className="flex-1 min-h-0">
                   {bottomPanelOpen ? (
                     <ResizablePanelGroup direction="vertical" className="h-full">
                       <ResizablePanel defaultSize={70} minSize={40}>
-                        <MonacoEditor />
+                        <div className="h-full w-full">
+                          <MonacoEditor />
+                        </div>
                       </ResizablePanel>
                       <ResizableHandle />
                       <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
@@ -373,7 +374,9 @@ const AdvancedIDE = () => {
                       </ResizablePanel>
                     </ResizablePanelGroup>
                   ) : (
-                    <MonacoEditor />
+                    <div className="h-full w-full">
+                      <MonacoEditor />
+                    </div>
                   )}
                 </div>
 
@@ -396,9 +399,8 @@ const AdvancedIDE = () => {
               </>
             )}
           </ResizablePanelGroup>
-        </div>
       </div>
-    </CodeIntelligenceProvider>
+    </div>
   );
 };
 

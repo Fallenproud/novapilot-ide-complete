@@ -72,9 +72,10 @@ const MonacoEditor = () => {
   const content = file?.content || '';
 
   return (
-    <div className="flex-1 relative">
+    <div className="h-full w-full relative overflow-hidden">
       <Editor
         height="100%"
+        width="100%"
         language={activeTab.language}
         value={content}
         onChange={handleChange}
@@ -93,6 +94,13 @@ const MonacoEditor = () => {
           autoIndent: 'full',
           formatOnPaste: true,
           formatOnType: true,
+          selectOnLineNumbers: true,
+          mouseWheelZoom: true,
+          contextmenu: true,
+          wordBreak: 'normal',
+          lineNumbersMinChars: 3,
+          glyphMargin: true,
+          fixedOverflowWidgets: true,
         }}
       />
     </div>
