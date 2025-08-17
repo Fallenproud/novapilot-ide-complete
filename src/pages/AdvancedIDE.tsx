@@ -19,7 +19,11 @@ import {
   RotateCcw,
   Save,
   Plus,
-  X
+  X,
+  Rocket,
+  Globe,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,6 +39,9 @@ import IntelliSensePanel from "@/components/playground/IntelliSensePanel";
 import { useAIStore } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useEditorStore } from "@/stores/editorStore";
+import DynamicPreview from "@/components/playground/DynamicPreview";
+import { deploymentService } from "@/services/deploymentService";
+import { useToast } from "@/hooks/use-toast";
 
 const AdvancedIDE = () => {
   const navigate = useNavigate();
@@ -42,13 +49,17 @@ const AdvancedIDE = () => {
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [bottomPanelOpen, setBottomPanelOpen] = useState(false);
+  const [centerPanelOpen, setCenterPanelOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [leftPanelMode, setLeftPanelMode] = useState<'chat' | 'files'>('chat');
   const [rightPanelMode, setRightPanelMode] = useState<'preview' | 'mini'>('preview');
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   
   const { isProcessing } = useAIStore();
   const { activeProject, initializeSampleProjects, projects, setActiveProject } = useProjectStore();
   const { openTab, tabs } = useEditorStore();
+  const { toast } = useToast();
 
   // Initialize projects
   useEffect(() => {
@@ -88,6 +99,48 @@ const AdvancedIDE = () => {
     }
   };
 
+  const handleDeploy = async () => {
+    if (!activeProject) {
+      toast({
+        title: "No Project Selected",
+        description: "Please select a project to deploy.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDeploying(true);
+    try {
+      const result = await deploymentService.deployProject({
+        projectId: activeProject.id,
+        projectName: activeProject.name,
+        files: activeProject.files.map(f => ({
+          name: f.name,
+          content: f.content,
+          path: f.path,
+        })),
+      });
+
+      if (result.success && result.url) {
+        setDeployedUrl(result.url);
+        toast({
+          title: "Deployment Successful!",
+          description: `Your project is live at ${result.url}`,
+        });
+      } else {
+        throw new Error(result.error || 'Deployment failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Deployment Failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
   // Enhanced keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -103,6 +156,10 @@ const AdvancedIDE = () => {
         event.preventDefault();
         setBottomPanelOpen(!bottomPanelOpen);
       }
+      if ((event.ctrlKey || event.metaKey) && event.key === '0') {
+        event.preventDefault();
+        setCenterPanelOpen(!centerPanelOpen);
+      }
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'F') {
         event.preventDefault();
         toggleFullscreen();
@@ -115,7 +172,7 @@ const AdvancedIDE = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [leftPanelOpen, rightPanelOpen, bottomPanelOpen]);
+  }, [leftPanelOpen, rightPanelOpen, bottomPanelOpen, centerPanelOpen]);
 
   // Advanced File Tree Component
   const AdvancedFileTree = () => (
@@ -157,42 +214,6 @@ const AdvancedIDE = () => {
     </div>
   );
 
-  // Enhanced Live Preview
-  const EnhancedPreview = () => (
-    <div className="h-full bg-background flex flex-col border-l border-border">
-      <div className="p-3 border-b border-border bg-muted/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Monitor className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold">Live Preview</h3>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Refresh">
-              <RotateCcw className="h-3 w-3" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0" 
-              title="Toggle Size"
-              onClick={() => setRightPanelMode(rightPanelMode === 'preview' ? 'mini' : 'preview')}
-            >
-              {rightPanelMode === 'preview' ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-            </Button>
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 bg-background p-2">
-        <div className="w-full h-full bg-card border border-border rounded-lg overflow-hidden">
-          <iframe
-            src="data:text/html,<html><body style='margin:0;padding:20px;font-family:system-ui'><h1>Live Preview</h1><p>Your application will render here...</p></body></html>"
-            className="w-full h-full border-0"
-            title="Live Preview"
-          />
-        </div>
-      </div>
-    </div>
-  );
 
   // Terminal Panel
   const TerminalPanel = () => (
@@ -257,6 +278,15 @@ const AdvancedIDE = () => {
                   <PanelLeft className="h-3 w-3" />
                 </Button>
                 <Button
+                  variant={centerPanelOpen ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setCenterPanelOpen(!centerPanelOpen)}
+                  className="h-7 px-2"
+                  title="Toggle Editor (Ctrl+0)"
+                >
+                  {centerPanelOpen ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                </Button>
+                <Button
                   variant={rightPanelOpen ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setRightPanelOpen(!rightPanelOpen)}
@@ -283,6 +313,40 @@ const AdvancedIDE = () => {
                 <Save className="h-3 w-3 mr-1" />
                 Save
               </Button>
+
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-7"
+                onClick={handleDeploy}
+                disabled={isDeploying || !activeProject}
+                title="Deploy to E2B"
+              >
+                {isDeploying ? (
+                  <>
+                    <RotateCcw className="h-3 w-3 mr-1 animate-spin" />
+                    Deploying...
+                  </>
+                ) : (
+                  <>
+                    <Rocket className="h-3 w-3 mr-1" />
+                    Deploy
+                  </>
+                )}
+              </Button>
+
+              {deployedUrl && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7"
+                  onClick={() => window.open(deployedUrl, '_blank')}
+                  title="Open Deployed Site"
+                >
+                  <Globe className="h-3 w-3 mr-1" />
+                  Live
+                </Button>
+              )}
               
               <Button
                 variant={isRunning ? "destructive" : "default"}
@@ -352,51 +416,59 @@ const AdvancedIDE = () => {
             )}
 
             {/* Center Panel - Editor */}
-            <ResizablePanel defaultSize={rightPanelOpen ? 50 : 70} minSize={30}>
-              <div className="h-full flex flex-col">
-                {/* Editor Tabs */}
-                <div className="border-b border-border bg-muted/20">
-                  <EditorTabs />
-                </div>
+            {centerPanelOpen && (
+              <>
+                <ResizablePanel 
+                  defaultSize={rightPanelOpen ? (leftPanelOpen ? 50 : 60) : (leftPanelOpen ? 70 : 100)} 
+                  minSize={30}
+                >
+                  <div className="h-full flex flex-col">
+                    {/* Editor Tabs */}
+                    <div className="border-b border-border bg-muted/20">
+                      <EditorTabs />
+                    </div>
 
-                {/* Editor Area */}
-                <div className="flex-1 min-h-0">
-                  {bottomPanelOpen ? (
-                    <ResizablePanelGroup direction="vertical" className="h-full">
-                      <ResizablePanel defaultSize={70} minSize={40}>
+                    {/* Editor Area */}
+                    <div className="flex-1 min-h-0">
+                      {bottomPanelOpen ? (
+                        <ResizablePanelGroup direction="vertical" className="h-full">
+                          <ResizablePanel defaultSize={70} minSize={40}>
+                            <div className="h-full w-full">
+                              <MonacoEditor />
+                            </div>
+                          </ResizablePanel>
+                          <ResizableHandle />
+                          <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                            <TerminalPanel />
+                          </ResizablePanel>
+                        </ResizablePanelGroup>
+                      ) : (
                         <div className="h-full w-full">
                           <MonacoEditor />
                         </div>
-                      </ResizablePanel>
-                      <ResizableHandle />
-                      <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-                        <TerminalPanel />
-                      </ResizablePanel>
-                    </ResizablePanelGroup>
-                  ) : (
-                    <div className="h-full w-full">
-                      <MonacoEditor />
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Status Bar */}
-                <StatusBar />
-              </div>
-            </ResizablePanel>
+                    {/* Status Bar */}
+                    <StatusBar />
+                  </div>
+                </ResizablePanel>
+                {rightPanelOpen && <ResizableHandle />}
+              </>
+            )}
 
             {/* Right Panel - Preview */}
             {rightPanelOpen && (
-              <>
-                <ResizableHandle />
-                <ResizablePanel 
-                  defaultSize={rightPanelMode === 'preview' ? 30 : 15} 
-                  minSize={rightPanelMode === 'preview' ? 20 : 10}
-                  maxSize={50}
-                >
-                  <EnhancedPreview />
-                </ResizablePanel>
-              </>
+              <ResizablePanel 
+                defaultSize={rightPanelMode === 'preview' ? (centerPanelOpen ? 30 : 70) : 15} 
+                minSize={rightPanelMode === 'preview' ? 20 : 10}
+                maxSize={centerPanelOpen ? 50 : 80}
+              >
+                <DynamicPreview 
+                  mode={rightPanelMode}
+                  onModeChange={setRightPanelMode}
+                />
+              </ResizablePanel>
             )}
           </ResizablePanelGroup>
       </div>
