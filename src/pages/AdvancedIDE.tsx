@@ -371,7 +371,7 @@ const AdvancedIDE = () => {
                       <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
                         <TerminalPanel />
                       </ResizablePanel>
-                  </ResizablePanelGroup>
+                    </ResizablePanelGroup>
                   ) : (
                     <MonacoEditor />
                   )}
