@@ -38,17 +38,15 @@ const Playground = () => {
 
   // Initialize sample projects and set active project
   useEffect(() => {
-    const initialize = async () => {
-      await initializeSampleProjects();
-      
-      // If no active project is set, set the first available project as active
-      if (!activeProject && projects.length > 0) {
-        setActiveProject(projects[0]);
-      }
-    };
-    
-    initialize();
-  }, [initializeSampleProjects, activeProject, projects, setActiveProject]);
+    initializeSampleProjects();
+  }, [initializeSampleProjects]);
+
+  // Set active project when projects are loaded
+  useEffect(() => {
+    if (projects.length > 0 && !activeProject) {
+      setActiveProject(projects[0]);
+    }
+  }, [projects, activeProject, setActiveProject]);
 
   // Auto-open first file when active project changes
   useEffect(() => {
