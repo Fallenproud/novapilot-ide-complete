@@ -1,18 +1,16 @@
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export interface EditorTab {
   id: string;
-  fileId: string;
-  fileName: string;
-  filePath: string;
+  name: string;
+  path: string;
   language: string;
+  fileId: string; // Reference to the actual file in project store
   isDirty?: boolean;
-  isActive: boolean;  // Made required instead of optional
 }
 
-interface EditorState {
+interface EditorStore {
   tabs: EditorTab[];
   activeTabId: string | null;
   theme: 'light' | 'dark';
@@ -21,125 +19,87 @@ interface EditorState {
   minimap: boolean;
   
   // Actions
-  openTab: (file: { id: string; name: string; path: string; language: string }) => void;
+  openTab: (tab: Omit<EditorTab, 'isDirty'>) => void;
   closeTab: (tabId: string) => void;
   setActiveTab: (tabId: string) => void;
   markTabDirty: (tabId: string, isDirty: boolean) => void;
-  closeAllTabs: () => void;
-  closeOtherTabs: (keepTabId: string) => void;
+  updateTabContent: (tabId: string, content: string) => void;
   
   // Settings
   setTheme: (theme: 'light' | 'dark') => void;
   setFontSize: (size: number) => void;
-  toggleWordWrap: () => void;
-  toggleMinimap: () => void;
+  setWordWrap: (enabled: boolean) => void;
+  setMinimap: (enabled: boolean) => void;
 }
 
-export const useEditorStore = create<EditorState>()(
-  persist(
-    (set, get) => ({
-      tabs: [],
-      activeTabId: null,
-      theme: 'dark',
-      fontSize: 14,
-      wordWrap: true,
-      minimap: false,
-
-      openTab: (file) => {
-        const existingTab = get().tabs.find(tab => tab.fileId === file.id);
-        
-        if (existingTab) {
-          set({ activeTabId: existingTab.id });
-          return;
-        }
-
-        const newTab: EditorTab = {
-          id: crypto.randomUUID(),
-          fileId: file.id,
-          fileName: file.name,
-          filePath: file.path,
-          language: file.language,
-          isDirty: false,
-          isActive: true
-        };
-
-        set(state => ({
-          tabs: [...state.tabs.map(tab => ({ ...tab, isActive: false })), newTab],
-          activeTabId: newTab.id
-        }));
-      },
-
-      closeTab: (tabId: string) => {
-        const state = get();
-        const tabIndex = state.tabs.findIndex(tab => tab.id === tabId);
-        const newTabs = state.tabs.filter(tab => tab.id !== tabId);
-        
-        let newActiveTabId = state.activeTabId;
-        if (state.activeTabId === tabId) {
-          if (newTabs.length > 0) {
-            const nextIndex = Math.min(tabIndex, newTabs.length - 1);
-            newActiveTabId = newTabs[nextIndex]?.id || null;
-          } else {
-            newActiveTabId = null;
-          }
-        }
-
-        set({
-          tabs: newTabs.map(tab => ({
-            ...tab,
-            isActive: tab.id === newActiveTabId
-          })),
-          activeTabId: newActiveTabId
-        });
-      },
-
-      setActiveTab: (tabId: string) => {
-        set(state => ({
-          tabs: state.tabs.map(tab => ({
-            ...tab,
-            isActive: tab.id === tabId
-          })),
-          activeTabId: tabId
-        }));
-      },
-
-      markTabDirty: (tabId: string, isDirty: boolean) => {
-        set(state => ({
-          tabs: state.tabs.map(tab =>
-            tab.id === tabId ? { ...tab, isDirty } : tab
-          )
-        }));
-      },
-
-      closeAllTabs: () => {
-        set({ tabs: [], activeTabId: null });
-      },
-
-      closeOtherTabs: (keepTabId: string) => {
-        set(state => ({
-          tabs: state.tabs.filter(tab => tab.id === keepTabId),
-          activeTabId: keepTabId
-        }));
-      },
-
-      setTheme: (theme: 'light' | 'dark') => {
-        set({ theme });
-      },
-
-      setFontSize: (fontSize: number) => {
-        set({ fontSize: Math.max(8, Math.min(32, fontSize)) });
-      },
-
-      toggleWordWrap: () => {
-        set(state => ({ wordWrap: !state.wordWrap }));
-      },
-
-      toggleMinimap: () => {
-        set(state => ({ minimap: !state.minimap }));
-      }
-    }),
-    {
-      name: 'novapilot-editor'
+export const useEditorStore = create<EditorStore>((set, get) => ({
+  tabs: [],
+  activeTabId: null,
+  theme: 'dark',
+  fontSize: 14,
+  wordWrap: true,
+  minimap: true,
+  
+  openTab: (newTab) => {
+    const { tabs } = get();
+    const existingTab = tabs.find(tab => tab.fileId === newTab.fileId);
+    
+    if (existingTab) {
+      // Tab already exists, just activate it
+      set({ activeTabId: existingTab.id });
+    } else {
+      // Create new tab
+      const tabWithDefaults = {
+        ...newTab,
+        isDirty: false
+      };
+      set({ 
+        tabs: [...tabs, tabWithDefaults],
+        activeTabId: newTab.id
+      });
     }
-  )
-);
+  },
+  
+  closeTab: (tabId) => {
+    const { tabs, activeTabId } = get();
+    const newTabs = tabs.filter(tab => tab.id !== tabId);
+    
+    let newActiveTabId = activeTabId;
+    if (activeTabId === tabId) {
+      // If closing active tab, switch to next or previous tab
+      const closingIndex = tabs.findIndex(tab => tab.id === tabId);
+      if (newTabs.length > 0) {
+        const nextIndex = Math.min(closingIndex, newTabs.length - 1);
+        newActiveTabId = newTabs[nextIndex]?.id || null;
+      } else {
+        newActiveTabId = null;
+      }
+    }
+    
+    set({ 
+      tabs: newTabs,
+      activeTabId: newActiveTabId
+    });
+  },
+  
+  setActiveTab: (tabId) => {
+    set({ activeTabId: tabId });
+  },
+  
+  markTabDirty: (tabId, isDirty) => {
+    set(state => ({
+      tabs: state.tabs.map(tab =>
+        tab.id === tabId ? { ...tab, isDirty } : tab
+      )
+    }));
+  },
+  
+  updateTabContent: (tabId, content) => {
+    // This could be used for future content caching if needed
+  },
+  
+  setTheme: (theme) => set({ theme }),
+  setFontSize: (fontSize) => set({ fontSize }),
+  setWordWrap: (wordWrap) => set({ wordWrap }),
+  setMinimap: (minimap) => set({ minimap }),
+}));

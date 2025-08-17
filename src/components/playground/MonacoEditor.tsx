@@ -40,7 +40,7 @@ const MonacoEditor = () => {
     // Mark tab as dirty
     markTabDirty(activeTab.id, true);
     
-    // Update file content in project store
+    // Update file content in project store using the fileId
     updateFile(activeProject.id, activeTab.fileId, value);
   };
 
@@ -67,7 +67,7 @@ const MonacoEditor = () => {
     );
   }
 
-  // Get file content from project
+  // Get file content from project using fileId
   const file = activeProject?.files.find(f => f.id === activeTab.fileId);
   const content = file?.content || '';
 

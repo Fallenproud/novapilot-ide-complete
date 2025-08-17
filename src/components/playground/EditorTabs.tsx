@@ -5,80 +5,81 @@ import { useEditorStore } from "@/stores/editorStore";
 import { useProjectStore } from "@/stores/projectStore";
 
 const EditorTabs = () => {
-  const { tabs, activeTabId, setActiveTab, closeTab, openTab } = useEditorStore();
-  const { activeProject, setActiveFile } = useProjectStore();
+  const { tabs, activeTabId, closeTab, setActiveTab } = useEditorStore();
+  const { activeProject } = useProjectStore();
 
   const getFileIcon = (language: string) => {
-    const colorMap: Record<string, string> = {
-      typescript: 'text-blue-400',
-      tsx: 'text-blue-400',
-      javascript: 'text-yellow-400',
-      json: 'text-green-400',
-      markdown: 'text-gray-400',
-      css: 'text-pink-400',
-      html: 'text-orange-400'
-    };
-    return colorMap[language] || 'text-[#8B949E]';
-  };
-
-  // Handle tab switching and sync with project store
-  const handleTabSwitch = (tabId: string) => {
-    setActiveTab(tabId);
-    const tab = tabs.find(t => t.id === tabId);
-    if (tab && activeProject) {
-      const file = activeProject.files.find(f => f.id === tab.fileId);
-      if (file) {
-        setActiveFile(file);
-      }
+    switch (language) {
+      case 'javascript':
+      case 'typescript':
+        return '📄';
+      case 'jsx':
+      case 'tsx':
+        return '⚛️';
+      case 'html':
+        return '🌐';
+      case 'css':
+        return '🎨';
+      case 'json':
+        return '📋';
+      case 'markdown':
+        return '📝';
+      default:
+        return '📄';
     }
   };
 
   if (tabs.length === 0) {
     return (
-      <div className="border-b border-[#21262D] bg-[#161B22] px-4 py-3">
-        <div className="flex items-center space-x-2">
-          <FileText className="h-4 w-4 text-[#8B949E]" />
-          <div className="text-sm text-[#8B949E]">
-            {activeProject?.files && activeProject.files.length > 0 
-              ? 'Loading files...' 
-              : 'No files in project'
-            }
-          </div>
-        </div>
+      <div className="h-10 bg-[#161B22] border-b border-[#21262D] flex items-center px-4">
+        <div className="text-sm text-[#8B949E]">No files open</div>
       </div>
     );
   }
 
   return (
-    <div className="border-b border-[#21262D] bg-[#161B22] flex items-center overflow-x-auto min-h-[40px]">
-      {tabs.map((tab) => (
-        <div
-          key={tab.id}
-          className={`flex items-center space-x-2 px-4 py-2 border-r border-[#21262D] cursor-pointer group min-w-0 max-w-48 ${
-            tab.id === activeTabId 
-              ? 'bg-[#0D1117] text-[#F0F6FC] border-b-2 border-[#1F6FEB]' 
-              : 'bg-[#161B22] text-[#8B949E] hover:bg-[#21262D] hover:text-[#F0F6FC]'
-          }`}
-          onClick={() => handleTabSwitch(tab.id)}
-        >
-          <FileText className={`h-4 w-4 flex-shrink-0 ${getFileIcon(tab.language)}`} />
-          <span className="text-sm truncate flex-1">{tab.fileName}</span>
-          {tab.isDirty && (
-            <span className="text-[#FFA657] text-xs flex-shrink-0">●</span>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 ml-1 flex-shrink-0 hover:bg-[#30363D]"
-            onClick={(e) => {
-              e.stopPropagation();
-              closeTab(tab.id);
-            }}
+    <div className="h-10 bg-[#161B22] border-b border-[#21262D] flex items-center overflow-x-auto">
+      {tabs.map((tab) => {
+        const isActive = tab.id === activeTabId;
+        const file = activeProject?.files.find(f => f.id === tab.fileId);
+        
+        return (
+          <div
+            key={tab.id}
+            className={`flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer border-r border-[#21262D] min-w-0 ${
+              isActive 
+                ? 'bg-[#0D1117] text-[#F0F6FC] border-b-2 border-b-[#1F6FEB]' 
+                : 'bg-[#161B22] text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#21262D]'
+            }`}
+            onClick={() => setActiveTab(tab.id)}
           >
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-      ))}
+            <span className="text-xs">{getFileIcon(tab.language)}</span>
+            <FileText className="h-3 w-3 opacity-70 flex-shrink-0" />
+            <span className="truncate max-w-[120px]" title={tab.name}>
+              {tab.name}
+            </span>
+            {file?.lastModified && (
+              <div className={`w-2 h-2 rounded-full ${
+                // Show modified indicator if file has been changed recently
+                new Date().getTime() - new Date(file.lastModified).getTime() < 60000
+                  ? 'bg-orange-500' 
+                  : 'bg-transparent'
+              }`} />
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-4 w-4 p-0 opacity-50 hover:opacity-100 ml-1 flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeTab(tab.id);
+              }}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        );
+      })}
     </div>
   );
 };
