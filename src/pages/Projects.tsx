@@ -38,7 +38,7 @@ const Projects = () => {
 
   const handleOpenProject = (project: any) => {
     setActiveProject(project);
-    navigate('/playground');
+    navigate('/ide');
   };
 
   const filteredProjects = projects.filter(project =>

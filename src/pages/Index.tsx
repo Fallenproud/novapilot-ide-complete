@@ -40,8 +40,8 @@ const Index = () => {
     // Clear previous workflow
     clearWorkflow();
 
-    // Navigate to playground
-    navigate('/playground');
+    // Navigate to IDE
+    navigate('/ide');
 
     // Start AI workflow after navigation
     setTimeout(() => {

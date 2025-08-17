@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
@@ -28,8 +28,8 @@ const AppContent = () => {
           <Route path="/ide" element={<AdvancedIDE />} />
           <Route path="/status" element={<ProjectStatus />} />
           {/* Redirect legacy playground routes to IDE */}
-          <Route path="/playground" element={<AdvancedIDE />} />
-          <Route path="/playground-new" element={<AdvancedIDE />} />
+          <Route path="/playground" element={<Navigate to="/ide" replace />} />
+          <Route path="/playground-new" element={<Navigate to="/ide" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

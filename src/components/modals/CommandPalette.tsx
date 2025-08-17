@@ -88,9 +88,9 @@ const CommandPalette = () => {
             <FolderOpen className="mr-2 h-4 w-4" />
             Go to Projects
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => navigate('/playground'))}>
+          <CommandItem onSelect={() => runCommand(() => navigate('/ide'))}>
             <Code className="mr-2 h-4 w-4" />
-            Go to Playground
+            Go to IDE
           </CommandItem>
         </CommandGroup>
 
@@ -100,7 +100,7 @@ const CommandPalette = () => {
             Create New Project
           </CommandItem>
           {activeProject && (
-            <CommandItem onSelect={() => runCommand(() => navigate('/playground'))}>
+            <CommandItem onSelect={() => runCommand(() => navigate('/ide'))}>
               <Play className="mr-2 h-4 w-4" />
               Open Current Project
             </CommandItem>
@@ -154,7 +154,7 @@ const CommandPalette = () => {
                 onSelect={() => runCommand(() => {
                   // Set active project and navigate
                   useProjectStore.getState().setActiveProject(project);
-                  navigate('/playground');
+                  navigate('/ide');
                 })}
               >
                 <FolderOpen className="mr-2 h-4 w-4" />

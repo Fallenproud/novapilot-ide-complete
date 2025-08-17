@@ -31,9 +31,9 @@ const Header = () => {
     navigate('/projects');
   };
 
-  const handlePlaygroundClick = () => {
+  const handleIDEClick = () => {
     if (activeProject) {
-      navigate('/playground');
+      navigate('/ide');
     } else {
       // Create a sample project if none exists
       const { createProject, setActiveProject } = useProjectStore.getState();
@@ -41,7 +41,7 @@ const Header = () => {
       // Get the newly created project
       const newProject = useProjectStore.getState().projects[0];
       setActiveProject(newProject);
-      navigate('/playground');
+      navigate('/ide');
     }
   };
 
@@ -77,13 +77,13 @@ const Header = () => {
             </Button>
 
             <Button
-              variant={isActive('/playground') ? 'default' : 'ghost'}
+              variant={isActive('/ide') ? 'default' : 'ghost'}
               size="sm"
-              onClick={handlePlaygroundClick}
+              onClick={handleIDEClick}
               className="flex items-center gap-2"
             >
               <Play className="h-4 w-4" />
-              Playground
+              IDE
               {activeProject && (
                 <Badge variant="outline" className="ml-1 px-1.5 py-0.5 text-xs">
                   {activeProject.name}
