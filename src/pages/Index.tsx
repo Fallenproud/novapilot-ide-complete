@@ -29,7 +29,9 @@ const Index = () => {
 
     // Ensure we have an active project
     if (!activeProject) {
-      const newProject = createProject('AI Generated Project', prompt);
+      createProject('AI Generated Project', prompt);
+      // Get the newly created project from the store
+      const newProject = projects[projects.length - 1];
       if (newProject) {
         setActiveProject(newProject);
       }
