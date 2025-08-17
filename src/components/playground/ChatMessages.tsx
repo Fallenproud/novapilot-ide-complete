@@ -115,25 +115,27 @@ const ChatMessages = () => {
   const getMessageBg = (type: string, status?: string) => {
     switch (type) {
       case 'user':
-        return 'bg-primary/5 border-primary/20';
+        return 'bg-gradient-to-br from-primary/8 to-primary/4 border-primary/30 glass-panel';
       case 'system':
-        return 'bg-accent/50 border-accent';
+        return 'bg-gradient-to-br from-accent/20 to-accent/10 border-accent/40 glass-panel';
       case 'ai':
-        if (status === 'error') return 'bg-destructive/5 border-destructive/20';
-        if (status === 'thinking' || status === 'analyzing') return 'bg-yellow-500/5 border-yellow-500/20';
-        if (status === 'coding') return 'bg-green-500/5 border-green-500/20';
-        return 'bg-muted/50 border-border';
+        if (status === 'error') return 'bg-gradient-to-br from-destructive/8 to-destructive/4 border-destructive/30 glass-panel';
+        if (status === 'thinking' || status === 'analyzing') return 'bg-gradient-to-br from-yellow-500/8 to-yellow-500/4 border-yellow-500/30 glass-panel';
+        if (status === 'coding') return 'bg-gradient-to-br from-green-500/8 to-green-500/4 border-green-500/30 glass-panel';
+        return 'bg-gradient-to-br from-card/80 to-muted/60 border-border/60 glass-panel';
       default:
-        return 'bg-card border-border';
+        return 'bg-gradient-to-br from-card/80 to-card/60 border-border/60 glass-panel';
     }
   };
 
   const renderWorkflowConnector = (index: number, isLast: boolean) => {
     if (isLast) return null;
     return (
-      <div className="flex justify-center py-2">
-        <div className="w-px h-4 bg-border opacity-50">
-          <ArrowDown className="h-3 w-3 text-muted-foreground mx-auto" />
+      <div className="flex justify-center py-3">
+        <div className="flex flex-col items-center space-y-1">
+          <div className="w-px h-6 bg-gradient-to-b from-border/60 to-transparent" />
+          <ArrowDown className="h-4 w-4 text-muted-foreground/60 animate-pulse" />
+          <div className="w-px h-6 bg-gradient-to-t from-border/60 to-transparent" />
         </div>
       </div>
     );
@@ -142,24 +144,27 @@ const ChatMessages = () => {
   const renderProgressBar = (progress?: number) => {
     if (!progress) return null;
     return (
-      <div className="mt-2 w-full bg-muted rounded-full h-1.5">
+      <div className="mt-3 w-full bg-muted/40 rounded-full h-2 overflow-hidden">
         <div 
-          className="bg-primary h-1.5 rounded-full transition-all duration-300"
-          style={{ width: `${progress}%` }}
+          className="bg-gradient-to-r from-primary to-primary/80 h-full rounded-full transition-all duration-500 ease-out shadow-sm animate-progress-fill"
+          style={{ 
+            width: `${progress}%`,
+            '--progress-width': `${progress}%`
+          } as React.CSSProperties}
         />
       </div>
     );
   };
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      <ScrollArea className="flex-1 p-6">
-        <div className="space-y-2">
+    <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
+      <ScrollArea className="flex-1 p-6 scrollbar-thin">
+        <div className="space-y-3">
           {allMessages.map((message, index) => (
             <React.Fragment key={message.id}>
-              <div className={`flex items-start space-x-4 p-4 rounded-xl border transition-all duration-200 ${getMessageBg(message.type, message.status)}`}>
-                <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-background">
-                  <AvatarFallback className="bg-muted text-foreground text-sm">
+              <div className={`flex items-start space-x-4 p-5 rounded-2xl border transition-all duration-300 shadow-sm hover:shadow-md animate-message-slide-in ${getMessageBg(message.type, message.status)}`}>
+                <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-background shadow-lg">
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-foreground text-sm border border-primary/20">
                     {getMessageIcon(message.type, message.status)}
                   </AvatarFallback>
                 </Avatar>
@@ -228,14 +233,14 @@ const ChatMessages = () => {
                     </Badge>
                   </div>
                   
-                  <div className="text-sm text-muted-foreground flex items-center space-x-3">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
-                    <span>Analyzing your request and planning the solution...</span>
-                  </div>
+                   <div className="text-sm text-muted-foreground flex items-center space-x-4">
+                     <div className="flex space-x-1.5">
+                       <div className="w-2.5 h-2.5 bg-primary rounded-full animate-typing-dots"></div>
+                       <div className="w-2.5 h-2.5 bg-primary rounded-full animate-typing-dots" style={{ animationDelay: '0.2s' }}></div>
+                       <div className="w-2.5 h-2.5 bg-primary rounded-full animate-typing-dots" style={{ animationDelay: '0.4s' }}></div>
+                     </div>
+                     <span className="font-medium">Analyzing your request and planning the solution...</span>
+                   </div>
                 </div>
               </div>
             </>

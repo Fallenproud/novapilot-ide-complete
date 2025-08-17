@@ -37,14 +37,14 @@ const PromptInput = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-card border-t border-border">
-      <div className="flex-1 flex flex-col p-6">
+    <div className="h-full flex flex-col bg-gradient-to-t from-card/95 to-background/90 backdrop-blur-sm border-t border-border/60">
+      <div className="flex-1 flex flex-col p-6 space-y-6">
         {/* Templates Button */}
-        <div className="mb-4">
+        <div>
           <TemplatesPopup 
             onSelectTemplate={handleTemplateSelect}
             trigger={
-              <Button variant="outline" size="sm" className="w-full justify-start">
+              <Button variant="outline" size="sm" className="w-full justify-start glass-panel hover:bg-accent/20 transition-all duration-200">
                 <Layers className="h-4 w-4 mr-2" />
                 Browse Templates
               </Button>
@@ -55,25 +55,25 @@ const PromptInput = () => {
         {/* Input Area */}
         <div className="flex-1 flex flex-col">
           <div className="flex-1 flex flex-col justify-end">
-            <div className="relative">
+            <div className="relative group">
               <Textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Describe what you want to build... (⌘+Enter to send)"
-                className="min-h-[100px] pr-12 resize-none bg-background border-border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20"
+                className="min-h-[120px] pr-14 resize-none bg-background/80 backdrop-blur-sm border-border/60 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 focus:border-primary/40 rounded-xl shadow-sm transition-all duration-200 group-hover:shadow-md"
                 disabled={isProcessing}
               />
               <Button
                 onClick={handleSubmit}
                 disabled={!prompt.trim() || isProcessing}
                 size="sm"
-                className="absolute bottom-3 right-3 h-8 w-8 p-0"
+                className="absolute bottom-3 right-3 h-10 w-10 p-0 rounded-xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 {isProcessing ? (
-                  <Sparkles className="h-4 w-4 animate-spin" />
+                  <Sparkles className="h-5 w-5 animate-spin text-primary-foreground" />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <Send className="h-5 w-5 text-primary-foreground" />
                 )}
               </Button>
             </div>

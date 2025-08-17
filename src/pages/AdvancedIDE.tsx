@@ -386,8 +386,8 @@ const AdvancedIDE = () => {
         </div>
 
         {/* Main IDE Layout */}
-        <div className="flex-1 overflow-hidden p-4">
-          <ResizablePanelGroup direction="horizontal" className="h-full gap-6">
+        <div className="flex-1 overflow-hidden p-6">
+          <ResizablePanelGroup direction="horizontal" className="h-full gap-8">
             {/* Left Panel */}
             <ResizablePanel 
               defaultSize={leftPanelOpen ? 25 : 0} 
@@ -427,9 +427,9 @@ const AdvancedIDE = () => {
               minSize={centerPanelOpen ? 30 : 0}
               className={centerPanelOpen ? "" : "hidden"}
             >
-              <div className="h-full flex flex-col bg-card rounded-xl border border-border overflow-hidden">
+              <div className="h-full flex flex-col bg-gradient-to-br from-card/95 to-card/80 rounded-2xl border border-border/60 overflow-hidden shadow-elegant backdrop-blur-sm">
                 {/* Editor Tabs */}
-                <div className="border-b border-border bg-muted/20 rounded-t-xl">
+                <div className="border-b border-border/60 bg-gradient-to-r from-muted/30 to-muted/20 rounded-t-2xl backdrop-blur-sm">
                   <EditorTabs />
                 </div>
 
@@ -472,7 +472,7 @@ const AdvancedIDE = () => {
               maxSize={rightPanelOpen ? (centerPanelOpen ? 50 : 80) : 0}
               className={rightPanelOpen ? "" : "hidden"}
             >
-              <div className="h-full bg-card rounded-xl border border-border overflow-hidden">
+              <div className="h-full bg-gradient-to-br from-card/95 to-card/80 rounded-2xl border border-border/60 overflow-hidden shadow-elegant backdrop-blur-sm">
                 <DynamicPreview 
                   mode={rightPanelMode}
                   onModeChange={setRightPanelMode}

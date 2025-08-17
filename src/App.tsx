@@ -4,8 +4,6 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
 import Projects from "@/pages/Projects";
-import Playground from "@/pages/Playground";
-import PlaygroundNew from "@/pages/PlaygroundNew";
 import AdvancedIDE from "@/pages/AdvancedIDE";
 import ProjectStatus from "@/pages/ProjectStatus";
 import NotFound from "@/pages/NotFound";
@@ -18,23 +16,24 @@ import { useUIStore } from "@/stores/uiStore";
 const AppContent = () => {
   const location = useLocation();
   const { isSettingsOpen, toggleSettings } = useUIStore();
-  const isPlayground = location.pathname === '/playground' || location.pathname === '/playground-new' || location.pathname === '/ide';
+  const isIDERoute = location.pathname.includes('ide') || location.pathname.includes('playground');
 
   return (
-    <div className={`${isPlayground ? 'h-screen' : 'min-h-screen'} bg-background font-sans antialiased flex flex-col`}>
-      {!isPlayground && <Header />}
+    <div className={`${isIDERoute ? 'h-screen' : 'min-h-screen'} bg-background font-sans antialiased flex flex-col`}>
+      {!isIDERoute && <Header />}
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/projects" element={<Projects />} />
-          <Route path="/playground" element={<Playground />} />
-          <Route path="/playground-new" element={<PlaygroundNew />} />
           <Route path="/ide" element={<AdvancedIDE />} />
           <Route path="/status" element={<ProjectStatus />} />
+          {/* Redirect legacy playground routes to IDE */}
+          <Route path="/playground" element={<AdvancedIDE />} />
+          <Route path="/playground-new" element={<AdvancedIDE />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      {!isPlayground && <Footer />}
+      {!isIDERoute && <Footer />}
       <Toaster />
       
       {/* Global Modals */}
