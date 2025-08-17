@@ -1,27 +1,22 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { 
   Play, 
   Square, 
   Settings, 
-  FileText, 
-  Terminal, 
   Code2,
-  MessageSquare,
   Menu,
   PanelLeftClose,
   PanelLeftOpen
 } from "lucide-react";
-import PromptInput from "@/components/playground/PromptInput";
-import WorkflowStepper from "@/components/playground/WorkflowStepper";
-import FileExplorerEnhanced from "@/components/playground/FileExplorerEnhanced";
 import MonacoEditor from "@/components/playground/MonacoEditor";
 import EditorTabs from "@/components/playground/EditorTabs";
 import StatusBar from "@/components/playground/StatusBar";
 import EnhancedPreviewPane from "@/components/playground/EnhancedPreviewPane";
-import ChatMessages from "@/components/playground/ChatMessages";
+import PlaygroundSidebar from "@/components/playground/PlaygroundSidebar";
+import WorkflowOverlay from "@/components/playground/WorkflowOverlay";
 import { useAIStore } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
 
@@ -30,71 +25,12 @@ const Playground = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [previewLayoutMode, setPreviewLayoutMode] = useState<'right' | 'bottom' | 'floating'>('right');
-  const { currentStep, isProcessing } = useAIStore();
+  const { isProcessing } = useAIStore();
   const { activeProject } = useProjectStore();
 
   const handleToggleExecution = () => {
     setIsRunning(!isRunning);
   };
-
-  const SidebarContent = () => (
-    <div className="h-full flex flex-col bg-[#161B22] border-r border-[#21262D]">
-      {/* AI Input Section */}
-      <div className="flex-shrink-0 border-b border-[#21262D]">
-        <div className="p-4">
-          <PromptInput />
-        </div>
-        <div className="p-4 border-t border-[#21262D]">
-          <WorkflowStepper />
-        </div>
-      </div>
-
-      {/* Chat Messages */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="p-3 bg-[#21262D] border-b border-[#30363D] flex-shrink-0">
-          <div className="flex items-center space-x-2">
-            <MessageSquare className="h-4 w-4 text-[#1F6FEB]" />
-            <h3 className="text-sm font-medium text-[#F0F6FC]">AI Chat</h3>
-          </div>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <ChatMessages />
-        </div>
-      </div>
-
-      {/* Bottom Panels */}
-      <div className="h-64 border-t border-[#21262D] flex-shrink-0">
-        <Tabs defaultValue="files" className="h-full flex flex-col">
-          <TabsList className="w-full bg-[#21262D] border-b border-[#30363D] rounded-none flex-shrink-0">
-            <TabsTrigger value="files" className="flex-1 data-[state=active]:bg-[#0D1117]">
-              <FileText className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Files</span>
-            </TabsTrigger>
-            <TabsTrigger value="terminal" className="flex-1 data-[state=active]:bg-[#0D1117]">
-              <Terminal className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Terminal</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="files" className="flex-1 m-0 overflow-hidden">
-            <FileExplorerEnhanced />
-          </TabsContent>
-          
-          <TabsContent value="terminal" className="flex-1 m-0 p-4 overflow-hidden">
-            <div className="h-full bg-black rounded font-mono text-sm text-green-400 p-3 overflow-auto">
-              <div className="text-[#8B949E] mb-2">NovaPilot Terminal v1.0.0</div>
-              <div className="text-green-400">$ Ready for commands...</div>
-              {isRunning && (
-                <div className="text-blue-400 animate-pulse">
-                  $ Building project...
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
 
   return (
     <div className="h-screen bg-[#0D1117] text-[#F0F6FC] flex flex-col overflow-hidden">
@@ -110,7 +46,7 @@ const Playground = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 bg-[#161B22]">
-                <SidebarContent />
+                <PlaygroundSidebar />
               </SheetContent>
             </Sheet>
 
@@ -172,7 +108,7 @@ const Playground = () => {
         {/* Desktop Sidebar */}
         {sidebarOpen && (
           <div className="hidden lg:block w-80 flex-shrink-0">
-            <SidebarContent />
+            <PlaygroundSidebar />
           </div>
         )}
 
@@ -209,6 +145,9 @@ const Playground = () => {
       {previewLayoutMode === 'floating' && (
         <EnhancedPreviewPane layoutMode="floating" />
       )}
+
+      {/* Smart Workflow Overlay - Only shows during AI generation */}
+      <WorkflowOverlay />
     </div>
   );
 };

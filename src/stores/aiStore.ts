@@ -53,6 +53,10 @@ interface AIState {
   clearPlannedOperations: () => void;
   addGeneratedFile: (filePath: string) => void;
   clearWorkflow: () => void;
+  
+  // New workflow management
+  startWorkflow: (prompt: string) => void;
+  completeWorkflow: () => void;
 }
 
 export const useAIStore = create<AIState>((set, get) => ({
@@ -126,6 +130,23 @@ export const useAIStore = create<AIState>((set, get) => ({
       architecturePlan: null,
       plannedOperations: [],
       generatedFiles: [],
+      currentStep: null,
+      isProcessing: false,
+      isStreaming: false
+    });
+  },
+
+  startWorkflow: (prompt: string) => {
+    set({
+      userPrompt: prompt,
+      currentStep: 'request',
+      isProcessing: true,
+      isStreaming: false
+    });
+  },
+
+  completeWorkflow: () => {
+    set({
       currentStep: null,
       isProcessing: false,
       isStreaming: false
