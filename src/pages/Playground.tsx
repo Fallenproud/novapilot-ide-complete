@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,7 +20,7 @@ import FileExplorerEnhanced from "@/components/playground/FileExplorerEnhanced";
 import MonacoEditor from "@/components/playground/MonacoEditor";
 import EditorTabs from "@/components/playground/EditorTabs";
 import StatusBar from "@/components/playground/StatusBar";
-import PreviewPane from "@/components/playground/PreviewPane";
+import EnhancedPreviewPane from "@/components/playground/EnhancedPreviewPane";
 import ChatMessages from "@/components/playground/ChatMessages";
 import { useAIStore } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -30,6 +29,7 @@ const Playground = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [previewLayoutMode, setPreviewLayoutMode] = useState<'right' | 'bottom' | 'floating'>('right');
   const { currentStep, isProcessing } = useAIStore();
   const { activeProject } = useProjectStore();
 
@@ -184,7 +184,7 @@ const Playground = () => {
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 flex overflow-hidden">
+          <div className={`flex-1 flex overflow-hidden ${previewLayoutMode === 'bottom' ? 'flex-col' : ''}`}>
             {/* Monaco Editor */}
             <div className="flex-1 flex flex-col min-w-0">
               <div className="flex-1 relative">
@@ -195,13 +195,20 @@ const Playground = () => {
               </div>
             </div>
 
-            {/* Preview Pane - Hidden on mobile by default */}
-            <div className="hidden xl:block flex-shrink-0 w-96 border-l border-[#21262D]">
-              <PreviewPane />
-            </div>
+            {/* Enhanced Preview Pane */}
+            {previewLayoutMode !== 'floating' && (
+              <div className={`flex-shrink-0 ${previewLayoutMode === 'right' ? 'hidden xl:block' : 'block'}`}>
+                <EnhancedPreviewPane layoutMode={previewLayoutMode} />
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Floating Preview Pane */}
+      {previewLayoutMode === 'floating' && (
+        <EnhancedPreviewPane layoutMode="floating" />
+      )}
     </div>
   );
 };
