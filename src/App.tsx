@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
 import Projects from "@/pages/Projects";
 import Playground from "@/pages/Playground";
+import PlaygroundNew from "@/pages/PlaygroundNew";
 import ProjectStatus from "@/pages/ProjectStatus";
 import NotFound from "@/pages/NotFound";
 import Header from "@/components/layout/Header";
@@ -26,6 +27,7 @@ const AppContent = () => {
           <Route path="/" element={<Index />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/playground" element={<Playground />} />
+          <Route path="/playground-new" element={<PlaygroundNew />} />
           <Route path="/status" element={<ProjectStatus />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
