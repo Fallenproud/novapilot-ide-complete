@@ -133,7 +133,7 @@ export class CodeIntelligenceEngine {
     
     for (const [filePath, content] of this.fileContents.entries()) {
       if (!this.symbolCache.has(filePath)) {
-        const symbols = await this.extractSymbols(filePath, content);
+        const symbols = this.extractSymbols(filePath, content);
         this.symbolCache.set(filePath, symbols);
       }
       
@@ -273,7 +273,7 @@ export class CodeIntelligenceEngine {
     return this.extractSymbols(filePath, content);
   }
 
-  private async extractSymbols(filePath: string, content: string): Promise<SymbolInfo[]> {
+  private extractSymbols(filePath: string, content: string): SymbolInfo[] {
     const symbols: SymbolInfo[] = [];
     const lines = content.split('\n');
     

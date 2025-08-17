@@ -1,22 +1,17 @@
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { HotReload } from './hotReload';
+
+import { HotReload } from './hmr';
 
 export class EnhancedRuntime {
   private performanceMonitor: PerformanceMonitor;
   private memoryProfiler: MemoryProfiler;
   private errorTracker: ErrorTracker;
   private hotReload: HotReload;
-  private errorBoundary: ErrorBoundary | null = null;
 
   constructor() {
     this.performanceMonitor = new PerformanceMonitor();
     this.memoryProfiler = new MemoryProfiler();
     this.errorTracker = new ErrorTracker();
     this.hotReload = new HotReload();
-  }
-
-  setErrorBoundary(errorBoundary: ErrorBoundary) {
-    this.errorBoundary = errorBoundary;
   }
 
   start() {
@@ -33,7 +28,6 @@ export class EnhancedRuntime {
     } catch (error: any) {
       console.error('Error executing code:', error);
       this.errorTracker.trackError(error);
-      this.errorBoundary?.handleError(error);
       throw error;
     } finally {
       console.log(this.formatPerformanceMetrics());
@@ -72,6 +66,10 @@ class MemoryProfiler {
 }
 
 class ErrorTracker {
+  trackError(error: any) {
+    console.error('Error tracked:', error);
+  }
+
   dispose() {
     // Cleanup error tracker
   }
