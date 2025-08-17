@@ -1,4 +1,5 @@
-import { MonacoLanguageService } from './languageService';
+
+import { LovableLanguageService } from './languageService';
 import type { Diagnostic, CompletionItem, HoverInfo } from './languageService';
 
 export { type Diagnostic, type CompletionItem, type HoverInfo };
@@ -12,6 +13,25 @@ export interface SymbolInfo {
     column: number;
   };
   documentation?: string;
+}
+
+export interface SymbolInformation {
+  name: string;
+  kind: number;
+  location: {
+    uri: string;
+    range: {
+      start: { line: number; character: number };
+      end: { line: number; character: number };
+    };
+  };
+}
+
+export enum DiagnosticSeverity {
+  Error = 1,
+  Warning = 2,
+  Information = 3,
+  Hint = 4
 }
 
 export interface ReferenceInfo {
@@ -37,18 +57,18 @@ export interface QuickFixAction {
 }
 
 export class CodeIntelligenceEngine {
-  private languageService: MonacoLanguageService;
+  private languageService: LovableLanguageService;
   private fileContents: Map<string, string> = new Map();
   private symbolCache: Map<string, SymbolInfo[]> = new Map();
   private diagnosticsCache: Map<string, Diagnostic[]> = new Map();
 
   constructor() {
-    this.languageService = new MonacoLanguageService();
+    this.languageService = new LovableLanguageService();
   }
 
   updateFile(filePath: string, content: string) {
     this.fileContents.set(filePath, content);
-    this.languageService.updateFile(filePath, content);
+    this.languageService.clearCache(filePath);
     
     // Clear caches for this file
     this.symbolCache.delete(filePath);
@@ -61,11 +81,13 @@ export class CodeIntelligenceEngine {
   }
 
   async getCompletions(filePath: string, line: number, column: number): Promise<CompletionItem[]> {
-    return this.languageService.getCompletions(filePath, line, column);
+    const content = this.fileContents.get(filePath) || '';
+    return this.languageService.getCompletions(content, { line, character: column }, filePath);
   }
 
   async getHoverInfo(filePath: string, line: number, column: number): Promise<HoverInfo | null> {
-    return this.languageService.getHoverInfo(filePath, line, column);
+    const content = this.fileContents.get(filePath) || '';
+    return this.languageService.getHoverInfo(content, { line, character: column }, filePath);
   }
 
   async getDiagnostics(filePath: string): Promise<Diagnostic[]> {
@@ -73,9 +95,37 @@ export class CodeIntelligenceEngine {
       return this.diagnosticsCache.get(filePath)!;
     }
 
-    const diagnostics = await this.languageService.getDiagnostics(filePath);
+    const content = this.fileContents.get(filePath) || '';
+    const diagnostics = await this.languageService.getDiagnostics(content, filePath);
     this.diagnosticsCache.set(filePath, diagnostics);
     return diagnostics;
+  }
+
+  getDocumentSymbols(filePath: string): SymbolInformation[] {
+    const content = this.fileContents.get(filePath) || '';
+    const symbols = this.extractSymbolsFromContent(content, filePath);
+    
+    return symbols.map(symbol => ({
+      name: symbol.name,
+      kind: this.getSymbolKind(symbol.kind),
+      location: {
+        uri: filePath,
+        range: {
+          start: { line: symbol.location.line - 1, character: symbol.location.column - 1 },
+          end: { line: symbol.location.line - 1, character: symbol.location.column + symbol.name.length - 1 }
+        }
+      }
+    }));
+  }
+
+  private getSymbolKind(kind: string): number {
+    switch (kind) {
+      case 'function': return 12;
+      case 'class': return 5;
+      case 'interface': return 11;
+      case 'variable': return 13;
+      default: return 1;
+    }
   }
 
   async findSymbols(query: string): Promise<SymbolInfo[]> {
@@ -176,7 +226,7 @@ export class CodeIntelligenceEngine {
     
     // Find diagnostics at the given position
     const relevantDiagnostics = diagnostics.filter(diagnostic => 
-      diagnostic.line >= line - 1 && diagnostic.line <= line + 1
+      diagnostic.range.start.line >= line - 1 && diagnostic.range.start.line <= line + 1
     );
     
     relevantDiagnostics.forEach(diagnostic => {
@@ -205,9 +255,9 @@ export class CodeIntelligenceEngine {
           edit: {
             file: filePath,
             range: {
-              startLine: diagnostic.line,
+              startLine: diagnostic.range.start.line,
               startColumn: 1,
-              endLine: diagnostic.line + 1,
+              endLine: diagnostic.range.start.line + 1,
               endColumn: 1
             },
             newText: ''
@@ -217,6 +267,10 @@ export class CodeIntelligenceEngine {
     });
     
     return fixes;
+  }
+
+  private extractSymbolsFromContent(content: string, filePath: string): SymbolInfo[] {
+    return this.extractSymbols(filePath, content);
   }
 
   private async extractSymbols(filePath: string, content: string): Promise<SymbolInfo[]> {
