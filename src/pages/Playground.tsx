@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -19,7 +18,6 @@ import EditorTabs from "@/components/playground/EditorTabs";
 import StatusBar from "@/components/playground/StatusBar";
 import EnhancedPreviewPane from "@/components/playground/EnhancedPreviewPane";
 import PlaygroundSidebar from "@/components/playground/PlaygroundSidebar";
-import WorkflowOverlay from "@/components/playground/WorkflowOverlay";
 import CodeIntelligenceProvider from "@/components/playground/CodeIntelligenceProvider";
 import IntelliSensePanel from "@/components/playground/IntelliSensePanel";
 import { useAIStore } from "@/stores/aiStore";
@@ -297,9 +295,6 @@ const Playground = () => {
         {previewLayoutMode === 'floating' && (
           <EnhancedPreviewPane layoutMode="floating" />
         )}
-
-        {/* Smart Workflow Overlay - Only shows during AI generation */}
-        <WorkflowOverlay />
       </div>
     </CodeIntelligenceProvider>
   );
