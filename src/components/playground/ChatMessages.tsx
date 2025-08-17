@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useAIStore } from '@/stores/aiStore';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   User, 
   Bot, 
@@ -25,13 +26,13 @@ const ChatMessages = () => {
 
   const getStepColor = (step: string) => {
     switch (step) {
-      case 'request': return 'bg-blue-500';
-      case 'analysis': return 'bg-yellow-500';
-      case 'planning': return 'bg-purple-500';
-      case 'generation': return 'bg-green-500';
-      case 'execution': return 'bg-orange-500';
-      case 'deployment': return 'bg-pink-500';
-      default: return 'bg-gray-500';
+      case 'request': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      case 'analysis': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      case 'planning': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'generation': return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'execution': return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
+      case 'deployment': return 'bg-pink-500/20 text-pink-300 border-pink-500/30';
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
     }
   };
 
@@ -65,56 +66,58 @@ const ChatMessages = () => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      {messages.map((message) => (
-        <Card
-          key={message.id}
-          className={`p-4 ${
-            message.type === 'user' 
-              ? 'bg-[#1F6FEB]/10 border-[#1F6FEB]/20 ml-8' 
-              : message.type === 'system'
-              ? 'bg-red-500/10 border-red-500/20'
-              : 'bg-[#161B22] border-[#30363D] mr-8'
-          }`}
-        >
-          <div className="flex items-start space-x-3">
-            <div className={`p-2 rounded-full ${
+    <ScrollArea className="h-full">
+      <div className="p-4 space-y-3">
+        {messages.map((message) => (
+          <Card
+            key={message.id}
+            className={`p-3 border transition-all duration-200 ${
               message.type === 'user' 
-                ? 'bg-[#1F6FEB] text-white' 
+                ? 'bg-[#1F6FEB]/10 border-[#1F6FEB]/30 ml-6' 
                 : message.type === 'system'
-                ? 'bg-red-500 text-white'
-                : 'bg-[#21262D] text-[#8B949E]'
-            }`}>
-              {getMessageIcon(message.type)}
-            </div>
-            
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-[#F0F6FC]">
-                  {message.type === 'user' ? 'You' : message.type === 'system' ? 'System' : 'NovaPilot AI'}
-                </span>
-                {message.step && (
-                  <Badge 
-                    variant="secondary" 
-                    className={`text-xs ${getStepColor(message.step)} text-white`}
-                  >
-                    {message.step}
-                  </Badge>
-                )}
-                <span className="text-xs text-[#6E7681]">
-                  {message.timestamp.toLocaleTimeString()}
-                </span>
+                ? 'bg-red-500/10 border-red-500/30'
+                : 'bg-[#161B22] border-[#30363D] mr-6'
+            }`}
+          >
+            <div className="flex items-start space-x-3">
+              <div className={`p-2 rounded-full flex-shrink-0 ${
+                message.type === 'user' 
+                  ? 'bg-[#1F6FEB] text-white' 
+                  : message.type === 'system'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-[#21262D] text-[#8B949E]'
+              }`}>
+                {getMessageIcon(message.type)}
               </div>
               
-              <div className="text-sm text-[#F0F6FC] whitespace-pre-wrap">
-                {message.content}
+              <div className="flex-1 space-y-2 min-w-0">
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <span className="text-sm font-medium text-[#F0F6FC]">
+                    {message.type === 'user' ? 'You' : message.type === 'system' ? 'System' : 'NovaPilot AI'}
+                  </span>
+                  {message.step && (
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs px-2 py-0.5 ${getStepColor(message.step)}`}
+                    >
+                      {message.step}
+                    </Badge>
+                  )}
+                  <span className="text-xs text-[#6E7681]">
+                    {message.timestamp.toLocaleTimeString()}
+                  </span>
+                </div>
+                
+                <div className="text-sm text-[#F0F6FC] whitespace-pre-wrap break-words">
+                  {message.content}
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-      ))}
-      <div ref={messagesEndRef} />
-    </div>
+          </Card>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+    </ScrollArea>
   );
 };
 
