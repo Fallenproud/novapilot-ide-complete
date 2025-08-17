@@ -389,89 +389,96 @@ const AdvancedIDE = () => {
         <div className="flex-1 overflow-hidden p-4">
           <ResizablePanelGroup direction="horizontal" className="h-full gap-6">
             {/* Left Panel */}
-            {leftPanelOpen && (
-              <>
-                <ResizablePanel defaultSize={25} minSize={20} maxSize={45}>
-                  <Tabs value={leftPanelMode} onValueChange={(value) => setLeftPanelMode(value as any)} className="h-full">
-                    <TabsList className="w-full bg-sidebar-accent border-b border-sidebar-border rounded-t-xl">
-                      <TabsTrigger value="chat" className="flex-1">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        AI Chat
-                      </TabsTrigger>
-                      <TabsTrigger value="files" className="flex-1">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Files
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="chat" className="h-full m-0">
-                      <AIChatPanel />
-                    </TabsContent>
-                    <TabsContent value="files" className="h-full m-0">
-                      <AdvancedFileTree />
-                    </TabsContent>
-                  </Tabs>
-                </ResizablePanel>
-                <ResizableHandle className="w-2 bg-transparent hover:bg-border/50 transition-colors" />
-              </>
-            )}
+            <ResizablePanel 
+              defaultSize={leftPanelOpen ? 25 : 0} 
+              minSize={leftPanelOpen ? 20 : 0} 
+              maxSize={leftPanelOpen ? 45 : 0}
+              className={leftPanelOpen ? "" : "hidden"}
+            >
+              <Tabs value={leftPanelMode} onValueChange={(value) => setLeftPanelMode(value as any)} className="h-full">
+                <TabsList className="w-full bg-sidebar-accent border-b border-sidebar-border rounded-t-xl">
+                  <TabsTrigger value="chat" className="flex-1">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    AI Chat
+                  </TabsTrigger>
+                  <TabsTrigger value="files" className="flex-1">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Files
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="chat" className="h-full m-0">
+                  <AIChatPanel />
+                </TabsContent>
+                <TabsContent value="files" className="h-full m-0">
+                  <AdvancedFileTree />
+                </TabsContent>
+              </Tabs>
+            </ResizablePanel>
+
+            {leftPanelOpen && <ResizableHandle className="w-2 bg-transparent hover:bg-border/50 transition-colors" />}
 
             {/* Center Panel - Editor */}
-            {centerPanelOpen && (
-              <>
-                <ResizablePanel 
-                  defaultSize={rightPanelOpen ? (leftPanelOpen ? 45 : 60) : (leftPanelOpen ? 70 : 100)} 
-                  minSize={30}
-                >
-                  <div className="h-full flex flex-col bg-card rounded-xl border border-border overflow-hidden">
-                    {/* Editor Tabs */}
-                    <div className="border-b border-border bg-muted/20 rounded-t-xl">
-                      <EditorTabs />
-                    </div>
+            <ResizablePanel 
+              defaultSize={
+                centerPanelOpen 
+                  ? (rightPanelOpen ? (leftPanelOpen ? 45 : 60) : (leftPanelOpen ? 70 : 100))
+                  : 0
+              } 
+              minSize={centerPanelOpen ? 30 : 0}
+              className={centerPanelOpen ? "" : "hidden"}
+            >
+              <div className="h-full flex flex-col bg-card rounded-xl border border-border overflow-hidden">
+                {/* Editor Tabs */}
+                <div className="border-b border-border bg-muted/20 rounded-t-xl">
+                  <EditorTabs />
+                </div>
 
-                    {/* Editor Area */}
-                    <div className="flex-1 min-h-0">
-                      {bottomPanelOpen ? (
-                        <ResizablePanelGroup direction="vertical" className="h-full">
-                          <ResizablePanel defaultSize={70} minSize={40}>
-                            <div className="h-full w-full">
-                              <MonacoEditor />
-                            </div>
-                          </ResizablePanel>
-                          <ResizableHandle className="h-2 bg-transparent hover:bg-border/50 transition-colors" />
-                          <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-                            <TerminalPanel />
-                          </ResizablePanel>
-                        </ResizablePanelGroup>
-                      ) : (
+                {/* Editor Area */}
+                <div className="flex-1 min-h-0">
+                  {bottomPanelOpen ? (
+                    <ResizablePanelGroup direction="vertical" className="h-full">
+                      <ResizablePanel defaultSize={70} minSize={40}>
                         <div className="h-full w-full">
                           <MonacoEditor />
                         </div>
-                      )}
+                      </ResizablePanel>
+                      <ResizableHandle className="h-2 bg-transparent hover:bg-border/50 transition-colors" />
+                      <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                        <TerminalPanel />
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
+                  ) : (
+                    <div className="h-full w-full">
+                      <MonacoEditor />
                     </div>
+                  )}
+                </div>
 
-                    {/* Status Bar */}
-                    <StatusBar />
-                  </div>
-                </ResizablePanel>
-                {rightPanelOpen && <ResizableHandle className="w-2 bg-transparent hover:bg-border/50 transition-colors" />}
-              </>
-            )}
+                {/* Status Bar */}
+                <StatusBar />
+              </div>
+            </ResizablePanel>
+
+            {centerPanelOpen && rightPanelOpen && <ResizableHandle className="w-2 bg-transparent hover:bg-border/50 transition-colors" />}
 
             {/* Right Panel - Preview */}
-            {rightPanelOpen && (
-              <ResizablePanel 
-                defaultSize={rightPanelMode === 'preview' ? (centerPanelOpen ? 30 : 70) : 15} 
-                minSize={rightPanelMode === 'preview' ? 20 : 10}
-                maxSize={centerPanelOpen ? 50 : 80}
-              >
-                <div className="h-full bg-card rounded-xl border border-border overflow-hidden">
-                  <DynamicPreview 
-                    mode={rightPanelMode}
-                    onModeChange={setRightPanelMode}
-                  />
-                </div>
-              </ResizablePanel>
-            )}
+            <ResizablePanel 
+              defaultSize={
+                rightPanelOpen 
+                  ? (rightPanelMode === 'preview' ? (centerPanelOpen ? 30 : 70) : 15)
+                  : 0
+              } 
+              minSize={rightPanelOpen ? (rightPanelMode === 'preview' ? 20 : 10) : 0}
+              maxSize={rightPanelOpen ? (centerPanelOpen ? 50 : 80) : 0}
+              className={rightPanelOpen ? "" : "hidden"}
+            >
+              <div className="h-full bg-card rounded-xl border border-border overflow-hidden">
+                <DynamicPreview 
+                  mode={rightPanelMode}
+                  onModeChange={setRightPanelMode}
+                />
+              </div>
+            </ResizablePanel>
           </ResizablePanelGroup>
       </div>
     </div>
