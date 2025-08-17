@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { 
@@ -28,12 +27,39 @@ const Playground = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [previewLayoutMode, setPreviewLayoutMode] = useState<'right' | 'bottom' | 'floating'>('right');
+  const [showKeyboardHints, setShowKeyboardHints] = useState(false);
   const { isProcessing } = useAIStore();
   const { activeProject } = useProjectStore();
 
   const handleToggleExecution = () => {
     setIsRunning(!isRunning);
   };
+
+  // Keyboard shortcuts for playground
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl/Cmd + K: Toggle keyboard hints
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        setShowKeyboardHints(!showKeyboardHints);
+      }
+      
+      // Ctrl/Cmd + \: Toggle sidebar
+      if ((event.ctrlKey || event.metaKey) && event.key === '\\') {
+        event.preventDefault();
+        setSidebarOpen(!sidebarOpen);
+      }
+      
+      // Ctrl/Cmd + Shift + E: Focus file explorer
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'E') {
+        event.preventDefault();
+        setSidebarOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showKeyboardHints, sidebarOpen]);
 
   return (
     <div className="h-screen bg-[#0D1117] text-[#F0F6FC] flex flex-col overflow-hidden">
@@ -70,6 +96,7 @@ const Playground = () => {
               size="sm"
               className="hidden lg:flex"
               onClick={() => setSidebarOpen(!sidebarOpen)}
+              title="Toggle Sidebar (Ctrl+\)"
             >
               {sidebarOpen ? (
                 <PanelLeftClose className="h-4 w-4" />
@@ -86,6 +113,9 @@ const Playground = () => {
             {activeProject && (
               <div className="hidden sm:block text-sm text-[#8B949E]">
                 <span className="text-[#F0F6FC]">{activeProject.name}</span>
+                <span className="ml-2 text-xs">
+                  {activeProject.files.length} file{activeProject.files.length !== 1 ? 's' : ''}
+                </span>
               </div>
             )}
           </div>
@@ -97,6 +127,7 @@ const Playground = () => {
               onClick={handleToggleExecution}
               disabled={isProcessing}
               className="bg-[#1F6FEB] hover:bg-[#1F6FEB]/90"
+              title="Run Code (F5)"
             >
               {isRunning ? (
                 <>
@@ -110,12 +141,59 @@ const Playground = () => {
                 </>
               )}
             </Button>
-            <Button variant="ghost" size="sm" className="text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#21262D]">
+            
+            {/* Keyboard shortcuts hint */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#21262D]"
+              onClick={() => setShowKeyboardHints(!showKeyboardHints)}
+              title="Keyboard Shortcuts (Ctrl+K)"
+            >
               <Settings className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Keyboard Shortcuts Overlay */}
+      {showKeyboardHints && (
+        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-[#161B22] border border-[#21262D] rounded-lg p-6 max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Keyboard Shortcuts</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Toggle Sidebar</span>
+                <code className="bg-[#21262D] px-2 py-1 rounded">Ctrl+\</code>
+              </div>
+              <div className="flex justify-between">
+                <span>Toggle Preview</span>
+                <code className="bg-[#21262D] px-2 py-1 rounded">Ctrl+Shift+P</code>
+              </div>
+              <div className="flex justify-between">
+                <span>Fullscreen Preview</span>
+                <code className="bg-[#21262D] px-2 py-1 rounded">Ctrl+Shift+F</code>
+              </div>
+              <div className="flex justify-between">
+                <span>Refresh Preview</span>
+                <code className="bg-[#21262D] px-2 py-1 rounded">Ctrl+Shift+R</code>
+              </div>
+              <div className="flex justify-between">
+                <span>Focus Explorer</span>
+                <code className="bg-[#21262D] px-2 py-1 rounded">Ctrl+Shift+E</code>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-4"
+              onClick={() => setShowKeyboardHints(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden">

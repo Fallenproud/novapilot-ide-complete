@@ -5,13 +5,14 @@ import {
   RefreshCw, 
   ExternalLink, 
   FileText,
-  AlertCircle
+  AlertCircle,
+  Maximize2
 } from "lucide-react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useEditorStore } from "@/stores/editorStore";
 import PreviewPaneControls from "./PreviewPaneControls";
 import FileExplorerEnhanced from "./FileExplorerEnhanced";
-import LivePreviewRenderer from "./LivePreviewRenderer";
+import EnhancedLivePreviewRenderer from "./EnhancedLivePreviewRenderer";
 
 type ViewMode = 'preview' | 'code' | 'split';
 type PreviewSize = 'mobile' | 'tablet' | 'desktop' | 'fullscreen';
@@ -27,13 +28,15 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
   const [currentLayoutMode, setCurrentLayoutMode] = useState<LayoutMode>(layoutMode);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
   const { activeProject } = useProjectStore();
   const { activeTabId, tabs } = useEditorStore();
 
-  // Get active file content and language
+  // Get active file and all project files
   const activeTab = tabs.find(tab => tab.id === activeTabId);
-  const activeFile = activeProject?.files.find(f => f.id === activeTab?.fileId);
-  const currentCode = activeFile?.content || '';
+  const activeFile = activeProject?.files.find(f => f.id === activeTab?.fileId) || null;
+  const allFiles = activeProject?.files || [];
   const currentLanguage = activeTab?.language || 'javascript';
 
   const handleRefresh = useCallback(() => {
@@ -43,12 +46,18 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
     }, 500);
   }, []);
 
+  const handleToggleFullscreen = useCallback(() => {
+    setIsFullscreen(!isFullscreen);
+  }, [isFullscreen]);
+
   const getSizeClasses = () => {
+    if (isFullscreen) return 'w-full h-full';
+    
     switch (previewSize) {
       case 'mobile':
         return 'w-80 h-[568px] mx-auto';
       case 'tablet':
-        return 'w-[768px] h-[1024px] mx-auto';
+        return 'w-[768px] h-[600px] mx-auto';
       case 'desktop':
         return 'w-full h-full';
       case 'fullscreen':
@@ -60,6 +69,10 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
 
   const getContainerClasses = () => {
     const baseClasses = "bg-[#161B22] flex flex-col";
+    
+    if (isFullscreen) {
+      return `${baseClasses} fixed inset-0 z-50 bg-background`;
+    }
     
     switch (currentLayoutMode) {
       case 'right':
@@ -77,11 +90,14 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
     <div className="flex-1 bg-[#F5F5F5] flex items-center justify-center overflow-auto">
       {(viewMode === 'preview' || viewMode === 'split') && isVisible ? (
         <div className={`${getSizeClasses()} border rounded shadow-lg bg-white transition-all duration-300 overflow-hidden`}>
-          <LivePreviewRenderer
-            code={currentCode}
+          <EnhancedLivePreviewRenderer
+            activeFile={activeFile}
+            allFiles={allFiles}
             language={currentLanguage}
             isVisible={isVisible}
             className="w-full h-full"
+            onToggleFullscreen={handleToggleFullscreen}
+            isFullscreen={isFullscreen}
           />
         </div>
       ) : viewMode === 'code' ? (
@@ -92,6 +108,7 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
         <div className="text-center text-gray-500">
           <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
           <p className="text-sm">Preview hidden</p>
+          <p className="text-xs mt-1">Press Ctrl+Shift+P to show</p>
         </div>
       )}
     </div>
@@ -114,11 +131,14 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
         {/* Live preview on right */}
         <div className="w-1/2 bg-[#F5F5F5] flex items-center justify-center">
           <div className={`${getSizeClasses()} border rounded shadow-lg bg-white transition-all duration-300 overflow-hidden`}>
-            <LivePreviewRenderer
-              code={currentCode}
+            <EnhancedLivePreviewRenderer
+              activeFile={activeFile}
+              allFiles={allFiles}
               language={currentLanguage}
               isVisible={isVisible}
               className="w-full h-full"
+              onToggleFullscreen={handleToggleFullscreen}
+              isFullscreen={isFullscreen}
             />
           </div>
         </div>
@@ -167,11 +187,21 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0"
+            onClick={handleToggleFullscreen}
+          >
+            <Maximize2 className="h-3 w-3" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
             onClick={() => {
-              // Create a blob URL for the current preview content
-              const blob = new Blob([currentCode], { type: 'text/html' });
-              const url = URL.createObjectURL(blob);
-              window.open(url, '_blank');
+              if (activeFile?.content) {
+                const blob = new Blob([activeFile.content], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+              }
             }}
           >
             <ExternalLink className="h-3 w-3" />
@@ -188,10 +218,17 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
           <span>
             {viewMode === 'split' ? 'Split View' : viewMode === 'preview' ? `Live Preview (${previewSize})` : 'Code Tree'}
           </span>
-          <span className="flex items-center space-x-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span>Live</span>
-          </span>
+          <div className="flex items-center space-x-2">
+            <span className="flex items-center space-x-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              <span>Live</span>
+            </span>
+            {allFiles.length > 1 && (
+              <span className="text-[#8B949E]">
+                {allFiles.length} files
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
