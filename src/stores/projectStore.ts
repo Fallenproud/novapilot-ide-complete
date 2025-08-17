@@ -65,13 +65,11 @@ export const useProjectStore = create<ProjectState>()(
         // Only initialize if no projects exist
         if (state.projects.length === 0) {
           const sampleProjects = createSampleProjects();
-          const firstProject = sampleProjects[0];
-          const firstFile = firstProject.files[0];
           
           set({
             projects: sampleProjects,
-            activeProject: firstProject,
-            activeFile: firstFile
+            activeProject: null,
+            activeFile: null
           });
         }
       },
@@ -108,10 +106,9 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       setActiveProject: (project: Project) => {
-        const firstFile = project.files.length > 0 ? project.files[0] : null;
         set({ 
           activeProject: project, 
-          activeFile: firstFile 
+          activeFile: null 
         });
       },
 

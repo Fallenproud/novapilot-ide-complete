@@ -25,13 +25,8 @@ interface EnhancedPreviewPaneProps {
 }
 
 const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps) => {
-  const [viewMode, setViewMode] = useState<ViewMode>('split');
-  const [previewSize, setPreviewSize] = useState<PreviewSize>('desktop');
-  const [currentLayoutMode, setCurrentLayoutMode] = useState<LayoutMode>(layoutMode);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [previewEngine, setPreviewEngine] = useState<PreviewEngine>('lovable');
   
   const { activeProject } = useProjectStore();
   const { activeTabId, tabs } = useEditorStore();
@@ -53,133 +48,12 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
     setIsFullscreen(!isFullscreen);
   }, [isFullscreen]);
 
-  const handleToggleEngine = useCallback(() => {
-    setPreviewEngine(prev => prev === 'enhanced' ? 'lovable' : 'enhanced');
-  }, []);
 
-  const getSizeClasses = () => {
-    if (isFullscreen) return 'w-full h-full';
-    
-    switch (previewSize) {
-      case 'mobile':
-        return 'w-80 h-[568px] mx-auto';
-      case 'tablet':
-        return 'w-[768px] h-[600px] mx-auto';
-      case 'desktop':
-        return 'w-full h-full';
-      case 'fullscreen':
-        return 'w-full h-full';
-      default:
-        return 'w-full h-full';
-    }
-  };
-
-  const getContainerClasses = () => {
-    const baseClasses = "bg-[#161B22] flex flex-col";
-    
-    if (isFullscreen) {
-      return `${baseClasses} fixed inset-0 z-50 bg-background`;
-    }
-    
-    switch (currentLayoutMode) {
-      case 'right':
-        return `${baseClasses} w-96 border-l border-[#21262D]`;
-      case 'bottom':
-        return `${baseClasses} h-80 border-t border-[#21262D]`;
-      case 'floating':
-        return `${baseClasses} fixed top-20 right-4 w-96 h-[500px] rounded-lg shadow-2xl border border-[#21262D] z-50`;
-      default:
-        return `${baseClasses} w-96 border-l border-[#21262D]`;
-    }
-  };
-
-  const PreviewContent = () => (
-    <div className="flex-1 bg-[#F5F5F5] flex items-center justify-center overflow-auto">
-      {(viewMode === 'preview' || viewMode === 'split') && isVisible ? (
-        <div className={`${getSizeClasses()} border rounded shadow-lg bg-white transition-all duration-300 overflow-hidden`}>
-          {previewEngine === 'lovable' ? (
-            <LovablePreviewRenderer
-              activeFile={activeFile}
-              allFiles={allFiles}
-              isVisible={isVisible}
-              className="w-full h-full"
-              onToggleFullscreen={handleToggleFullscreen}
-              isFullscreen={isFullscreen}
-            />
-          ) : (
-            <EnhancedLivePreviewRenderer
-              activeFile={activeFile}
-              allFiles={allFiles}
-              language={currentLanguage}
-              isVisible={isVisible}
-              className="w-full h-full"
-              onToggleFullscreen={handleToggleFullscreen}
-              isFullscreen={isFullscreen}
-            />
-          )}
-        </div>
-      ) : viewMode === 'code' ? (
-        <div className="w-full h-full">
-          <FileExplorerEnhanced />
-        </div>
-      ) : (
-        <div className="text-center text-gray-500">
-          <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">Preview hidden</p>
-          <p className="text-xs mt-1">Press Ctrl+Shift+P to show</p>
-        </div>
-      )}
-    </div>
-  );
-
-  const SplitView = () => (
-    <div className="flex-1 flex flex-col">
-      <div className="flex-1 flex">
-        {/* Code tree on left */}
-        <div className="w-1/2 border-r border-[#21262D]">
-          <div className="p-2 bg-[#21262D] border-b border-[#30363D]">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-4 w-4 text-[#8B949E]" />
-              <span className="text-xs font-medium text-[#F0F6FC]">Project Files</span>
-            </div>
-          </div>
-          <FileExplorerEnhanced />
-        </div>
-        
-        {/* Live preview on right */}
-        <div className="w-1/2 bg-[#F5F5F5] flex items-center justify-center">
-          <div className={`${getSizeClasses()} border rounded shadow-lg bg-white transition-all duration-300 overflow-hidden`}>
-            <EnhancedLivePreviewRenderer
-              activeFile={activeFile}
-              allFiles={allFiles}
-              language={currentLanguage}
-              isVisible={isVisible}
-              className="w-full h-full"
-              onToggleFullscreen={handleToggleFullscreen}
-              isFullscreen={isFullscreen}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
-    <div className={getContainerClasses()}>
-      {/* Enhanced Controls Header */}
-      <PreviewPaneControls
-        viewMode={viewMode}
-        previewSize={previewSize}
-        layoutMode={currentLayoutMode}
-        isVisible={isVisible}
-        onViewModeChange={setViewMode}
-        onPreviewSizeChange={setPreviewSize}
-        onLayoutModeChange={setCurrentLayoutMode}
-        onVisibilityToggle={() => setIsVisible(!isVisible)}
-      />
-
-      {/* Quick Actions Bar */}
-      <div className="flex items-center justify-between px-4 py-1 bg-[#21262D] border-b border-[#30363D]">
+    <div className="h-full bg-[#161B22] flex flex-col">
+      {/* Preview Header */}
+      <div className="flex items-center justify-between px-4 py-2 bg-[#21262D] border-b border-[#30363D]">
         <div className="flex items-center space-x-2">
           <div className="text-xs text-[#8B949E]">
             {activeProject && activeFile ? (
@@ -188,18 +62,6 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
               <span>No file selected</span>
             )}
           </div>
-          
-          {/* Engine Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 text-xs"
-            onClick={handleToggleEngine}
-            title="Toggle Preview Engine"
-          >
-            <Zap className="h-3 w-3 mr-1" />
-            {previewEngine === 'lovable' ? 'Lovable' : 'Enhanced'}
-          </Button>
         </div>
         
         <div className="flex items-center space-x-1">
@@ -209,6 +71,7 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
             className="h-6 w-6 p-0"
             onClick={handleRefresh}
             disabled={isRefreshing}
+            title="Refresh Preview"
           >
             <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
@@ -218,6 +81,7 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
             size="sm"
             className="h-6 w-6 p-0"
             onClick={handleToggleFullscreen}
+            title="Fullscreen Preview"
           >
             <Maximize2 className="h-3 w-3" />
           </Button>
@@ -233,21 +97,42 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
                 window.open(url, '_blank');
               }
             }}
+            title="Open in New Tab"
           >
             <ExternalLink className="h-3 w-3" />
           </Button>
         </div>
       </div>
       
-      {/* Main Content Area */}
-      {viewMode === 'split' ? <SplitView /> : <PreviewContent />}
+      {/* Live Preview Area */}
+      <div className="flex-1 bg-white overflow-hidden">
+        {isFullscreen ? (
+          <div className="fixed inset-0 z-50 bg-white">
+            <LovablePreviewRenderer
+              activeFile={activeFile}
+              allFiles={allFiles}
+              isVisible={true}
+              className="w-full h-full"
+              onToggleFullscreen={handleToggleFullscreen}
+              isFullscreen={true}
+            />
+          </div>
+        ) : (
+          <LovablePreviewRenderer
+            activeFile={activeFile}
+            allFiles={allFiles}
+            isVisible={true}
+            className="w-full h-full"
+            onToggleFullscreen={handleToggleFullscreen}
+            isFullscreen={false}
+          />
+        )}
+      </div>
       
       {/* Status Footer */}
       <div className="border-t border-[#21262D] px-4 py-1 text-xs text-[#8B949E] bg-[#0D1117]">
         <div className="flex justify-between items-center">
-          <span>
-            {previewEngine === 'lovable' ? '⚡ Lovable Runtime' : '🔧 Enhanced Preview'} • {viewMode === 'split' ? 'Split View' : viewMode === 'preview' ? `Live Preview (${previewSize})` : 'Code Tree'}
-          </span>
+          <span>⚡ Live Preview</span>
           <div className="flex items-center space-x-2">
             <span className="flex items-center space-x-1">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>

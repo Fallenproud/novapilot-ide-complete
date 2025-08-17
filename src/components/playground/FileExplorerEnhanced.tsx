@@ -17,7 +17,7 @@ import { useEditorStore } from "@/stores/editorStore";
 const FileExplorerEnhanced = () => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['src', 'src/components', 'src/pages']));
   const [searchQuery, setSearchQuery] = useState("");
-  const { activeProject } = useProjectStore();
+  const { activeProject, setActiveFile } = useProjectStore();
   const { openTab, activeTabId } = useEditorStore();
 
   const handleFileClick = (file: any) => {
@@ -29,6 +29,8 @@ const FileExplorerEnhanced = () => {
       language: file.language,
       fileId: file.id
     });
+    // Also update the activeFile in project store for consistency
+    setActiveFile(file);
   };
 
   const toggleFolder = (path: string) => {

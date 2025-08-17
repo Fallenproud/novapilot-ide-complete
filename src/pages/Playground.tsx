@@ -249,59 +249,52 @@ const Playground = () => {
           </div>
         )}
 
-        {/* Main Layout */}
+        {/* Main Layout - Clean 2-Pane IDE */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Desktop Sidebar */}
+          {/* Left Pane: AI Chat + File Explorer + Terminal */}
           {sidebarOpen && (
             <div className="hidden lg:block w-80 flex-shrink-0">
               <PlaygroundSidebar />
             </div>
           )}
 
-          {/* Editor Area */}
-          <div className="flex-1 flex flex-col min-w-0">
-            {/* Editor Tabs */}
-            <div className="flex-shrink-0 border-b border-[#21262D]">
-              <EditorTabs />
-            </div>
-
-            {/* Main Content Area */}
-            <div className={`flex-1 flex overflow-hidden ${previewLayoutMode === 'bottom' ? 'flex-col' : ''}`}>
-              {/* Monaco Editor */}
-              <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-1 relative">
-                  <MonacoEditor />
-                </div>
-                <div className="flex-shrink-0">
-                  <StatusBar />
-                </div>
+          {/* Right Pane: Editor + Live Preview */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Editor Section */}
+            <div className="flex-1 flex flex-col min-w-0">
+              {/* Editor Tabs */}
+              <div className="flex-shrink-0 border-b border-[#21262D]">
+                <EditorTabs />
               </div>
 
-              {/* Enhanced Preview Pane */}
-              {previewLayoutMode !== 'floating' && (
-                <div className={`flex-shrink-0 ${previewLayoutMode === 'right' ? 'hidden xl:block' : 'block'}`}>
-                  <EnhancedPreviewPane layoutMode={previewLayoutMode} />
+              {/* Monaco Editor */}
+              <div className="flex-1 relative">
+                <MonacoEditor />
+              </div>
+
+              {/* Status Bar */}
+              <div className="flex-shrink-0">
+                <StatusBar />
+              </div>
+
+              {/* IntelliSense Panel - Bottom */}
+              {showIntelliSense && (
+                <div className="border-t border-[#21262D]">
+                  <IntelliSensePanel
+                    isVisible={showIntelliSense}
+                    onToggle={() => setShowIntelliSense(false)}
+                    className="h-80"
+                  />
                 </div>
               )}
             </div>
 
-            {/* IntelliSense Panel - Positioned at bottom */}
-            {showIntelliSense && (
-              <div className="border-t border-[#21262D]">
-                <IntelliSensePanel
-                  isVisible={showIntelliSense}
-                  onToggle={() => setShowIntelliSense(false)}
-                  className="h-80"
-                />
-              </div>
-            )}
+            {/* Live Preview Section */}
+            <div className="w-96 border-l border-[#21262D] flex-shrink-0">
+              <EnhancedPreviewPane />
+            </div>
           </div>
         </div>
-
-        {/* Floating Preview Pane */}
-        {previewLayoutMode === 'floating' && (
-          <EnhancedPreviewPane layoutMode="floating" />
-        )}
       </div>
     </CodeIntelligenceProvider>
   );
