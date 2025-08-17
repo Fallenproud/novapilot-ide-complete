@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
@@ -13,33 +13,41 @@ import SettingsModal from "@/components/modals/SettingsModal";
 import CommandPalette from "@/components/modals/CommandPalette";
 import { useUIStore } from "@/stores/uiStore";
 
-function App() {
+const AppContent = () => {
+  const location = useLocation();
   const { isSettingsOpen, toggleSettings } = useUIStore();
+  const isPlayground = location.pathname === '/playground';
 
+  return (
+    <div className={`${isPlayground ? 'h-screen' : 'min-h-screen'} bg-background font-sans antialiased flex flex-col`}>
+      {!isPlayground && <Header />}
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/playground" element={<Playground />} />
+          <Route path="/status" element={<ProjectStatus />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      {!isPlayground && <Footer />}
+      <Toaster />
+      
+      {/* Global Modals */}
+      <SettingsModal 
+        open={isSettingsOpen} 
+        onOpenChange={toggleSettings} 
+      />
+      <CommandPalette />
+    </div>
+  );
+};
+
+function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Router>
-        <div className="min-h-screen bg-background font-sans antialiased">
-          <Header />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/playground" element={<Playground />} />
-              <Route path="/status" element={<ProjectStatus />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
-          <Toaster />
-          
-          {/* Global Modals */}
-          <SettingsModal 
-            open={isSettingsOpen} 
-            onOpenChange={toggleSettings} 
-          />
-          <CommandPalette />
-        </div>
+        <AppContent />
       </Router>
     </ThemeProvider>
   );

@@ -1,17 +1,17 @@
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   RefreshCw, 
   ExternalLink, 
-  Code2,
   FileText,
   AlertCircle
 } from "lucide-react";
 import { useProjectStore } from "@/stores/projectStore";
-import { useUIStore } from "@/stores/uiStore";
+import { useEditorStore } from "@/stores/editorStore";
 import PreviewPaneControls from "./PreviewPaneControls";
 import FileExplorerEnhanced from "./FileExplorerEnhanced";
+import LivePreviewRenderer from "./LivePreviewRenderer";
 
 type ViewMode = 'preview' | 'code' | 'split';
 type PreviewSize = 'mobile' | 'tablet' | 'desktop' | 'fullscreen';
@@ -26,32 +26,20 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
   const [previewSize, setPreviewSize] = useState<PreviewSize>('desktop');
   const [currentLayoutMode, setCurrentLayoutMode] = useState<LayoutMode>(layoutMode);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string>('about:blank');
   const [isVisible, setIsVisible] = useState(true);
   const { activeProject } = useProjectStore();
-  const { isDarkMode } = useUIStore();
+  const { activeTabId, tabs } = useEditorStore();
 
-  // Simulate preview URL generation based on project
-  useEffect(() => {
-    if (activeProject) {
-      setPreviewUrl(`/preview/${activeProject.id}`);
-    } else {
-      setPreviewUrl('about:blank');
-    }
-  }, [activeProject]);
+  // Get active file content and language
+  const activeTab = tabs.find(tab => tab.id === activeTabId);
+  const activeFile = activeProject?.files.find(f => f.id === activeTab?.fileId);
+  const currentCode = activeFile?.content || '';
+  const currentLanguage = activeTab?.language || 'javascript';
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
-      const iframe = document.querySelector('#enhanced-preview-iframe') as HTMLIFrameElement;
-      if (iframe) {
-        const currentSrc = iframe.src;
-        iframe.src = 'about:blank';
-        setTimeout(() => {
-          iframe.src = currentSrc;
-        }, 100);
-      }
     }, 500);
   }, []);
 
@@ -86,15 +74,14 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
   };
 
   const PreviewContent = () => (
-    <div className="flex-1 bg-white flex items-center justify-center overflow-auto">
+    <div className="flex-1 bg-[#F5F5F5] flex items-center justify-center overflow-auto">
       {(viewMode === 'preview' || viewMode === 'split') && isVisible ? (
-        <div className={`${getSizeClasses()} border rounded shadow-lg bg-white transition-all duration-300`}>
-          <iframe
-            id="enhanced-preview-iframe"
-            src={previewUrl}
-            className="w-full h-full border-0 rounded"
-            title="Live Preview"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        <div className={`${getSizeClasses()} border rounded shadow-lg bg-white transition-all duration-300 overflow-hidden`}>
+          <LivePreviewRenderer
+            code={currentCode}
+            language={currentLanguage}
+            isVisible={isVisible}
+            className="w-full h-full"
           />
         </div>
       ) : viewMode === 'code' ? (
@@ -124,15 +111,14 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
           <FileExplorerEnhanced />
         </div>
         
-        {/* Preview on right */}
-        <div className="w-1/2 bg-white flex items-center justify-center">
-          <div className={`${getSizeClasses()} border rounded shadow-lg bg-white transition-all duration-300`}>
-            <iframe
-              id="enhanced-preview-iframe"
-              src={previewUrl}
-              className="w-full h-full border-0 rounded"
-              title="Live Preview"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        {/* Live preview on right */}
+        <div className="w-1/2 bg-[#F5F5F5] flex items-center justify-center">
+          <div className={`${getSizeClasses()} border rounded shadow-lg bg-white transition-all duration-300 overflow-hidden`}>
+            <LivePreviewRenderer
+              code={currentCode}
+              language={currentLanguage}
+              isVisible={isVisible}
+              className="w-full h-full"
             />
           </div>
         </div>
@@ -158,10 +144,10 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
       <div className="flex items-center justify-between px-4 py-1 bg-[#21262D] border-b border-[#30363D]">
         <div className="flex items-center space-x-2">
           <div className="text-xs text-[#8B949E]">
-            {activeProject ? (
-              <span className="text-[#F0F6FC]">{activeProject.name}</span>
+            {activeProject && activeFile ? (
+              <span className="text-[#F0F6FC]">{activeFile.name}</span>
             ) : (
-              <span>No project selected</span>
+              <span>No file selected</span>
             )}
           </div>
         </div>
@@ -181,7 +167,12 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0"
-            onClick={() => window.open(previewUrl, '_blank')}
+            onClick={() => {
+              // Create a blob URL for the current preview content
+              const blob = new Blob([currentCode], { type: 'text/html' });
+              const url = URL.createObjectURL(blob);
+              window.open(url, '_blank');
+            }}
           >
             <ExternalLink className="h-3 w-3" />
           </Button>
@@ -195,7 +186,7 @@ const EnhancedPreviewPane = ({ layoutMode = 'right' }: EnhancedPreviewPaneProps)
       <div className="border-t border-[#21262D] px-4 py-1 text-xs text-[#8B949E] bg-[#0D1117]">
         <div className="flex justify-between items-center">
           <span>
-            {viewMode === 'split' ? 'Split View' : viewMode === 'preview' ? `Preview (${previewSize})` : 'Code Tree'}
+            {viewMode === 'split' ? 'Split View' : viewMode === 'preview' ? `Live Preview (${previewSize})` : 'Code Tree'}
           </span>
           <span className="flex items-center space-x-2">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>

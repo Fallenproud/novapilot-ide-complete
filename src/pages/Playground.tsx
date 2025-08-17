@@ -9,8 +9,10 @@ import {
   Code2,
   Menu,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  ArrowLeft
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import MonacoEditor from "@/components/playground/MonacoEditor";
 import EditorTabs from "@/components/playground/EditorTabs";
 import StatusBar from "@/components/playground/StatusBar";
@@ -21,6 +23,7 @@ import { useAIStore } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
 
 const Playground = () => {
+  const navigate = useNavigate();
   const [isRunning, setIsRunning] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -38,6 +41,17 @@ const Playground = () => {
       <div className="border-b border-[#21262D] bg-[#161B22] px-4 py-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            {/* Back to Projects Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/projects')}
+              className="text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#21262D]"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Projects</span>
+            </Button>
+
             {/* Mobile Menu Button */}
             <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
               <SheetTrigger asChild>
