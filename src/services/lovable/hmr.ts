@@ -1,4 +1,3 @@
-
 export interface HMRUpdate {
   type: 'update' | 'invalidate' | 'error';
   moduleId: string;
@@ -211,3 +210,6 @@ export class HotModuleReplacementEngine {
     console.log('[HMR] Hot Module Replacement disposed');
   }
 }
+
+// Export alias for compatibility
+export { HotModuleReplacementEngine as HotReload };

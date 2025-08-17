@@ -1,22 +1,22 @@
 
-import { HotReload } from './hmr';
+import { HotModuleReplacementEngine } from './hmr';
 
 export class EnhancedRuntime {
   private performanceMonitor: PerformanceMonitor;
   private memoryProfiler: MemoryProfiler;
   private errorTracker: ErrorTracker;
-  private hotReload: HotReload;
+  private hotReload: HotModuleReplacementEngine;
 
   constructor() {
     this.performanceMonitor = new PerformanceMonitor();
     this.memoryProfiler = new MemoryProfiler();
     this.errorTracker = new ErrorTracker();
-    this.hotReload = new HotReload();
+    this.hotReload = new HotModuleReplacementEngine();
   }
 
   start() {
     console.log('Enhanced runtime started');
-    this.hotReload.start();
+    this.hotReload.enable();
   }
 
   async execute(code: string, context: any) {
@@ -43,9 +43,12 @@ export class EnhancedRuntime {
     this.performanceMonitor.dispose();
     this.memoryProfiler.dispose();
     this.errorTracker.dispose();
-    this.hotReload.dispose();
+    this.hotReload.disposeEngine();
   }
 }
+
+// Export alias for compatibility
+export { EnhancedRuntime as EnhancedLovableRuntime };
 
 class PerformanceMonitor {
   private metrics: any = {};
