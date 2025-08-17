@@ -40,6 +40,7 @@ import { useAIStore } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useEditorStore } from "@/stores/editorStore";
 import DynamicPreview from "@/components/playground/DynamicPreview";
+import E2BTerminal from "@/components/playground/E2BTerminal";
 import { deploymentService } from "@/services/deploymentService";
 import { useToast } from "@/hooks/use-toast";
 
@@ -215,31 +216,10 @@ const AdvancedIDE = () => {
   );
 
 
-  // Terminal Panel
+  // Terminal Panel with E2B Integration
   const TerminalPanel = () => (
-    <div className="h-full bg-muted/20 border-t border-border">
-      <div className="p-2 border-b border-border bg-muted/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Terminal className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold">Terminal</h3>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0"
-            onClick={() => setBottomPanelOpen(false)}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-      <div className="p-4 h-full bg-card font-mono text-sm overflow-auto">
-        <div className="text-muted-foreground mb-2">$ Advanced IDE Terminal v2.0</div>
-        <div className="text-primary">$ npm run dev</div>
-        <div className="text-muted-foreground">Server running on http://localhost:3000</div>
-        <div className="text-primary">$ _</div>
-      </div>
+    <div className="h-full bg-gradient-to-br from-card/95 to-card/80 rounded-xl border border-border/60 overflow-hidden shadow-elegant backdrop-blur-sm">
+      <E2BTerminal />
     </div>
   );
 
