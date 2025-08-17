@@ -1,6 +1,5 @@
-
 import { VirtualFileSystem } from '../virtualFileSystem';
-import { HotModuleReplacementEngine } from './hmr';
+import { HotModuleReplacementEngine, HMRAcceptCallback, HMRDisposeCallback } from './hmr';
 import { LovableDevTools } from './devtools';
 import { VirtualPackageRegistry } from './packageRegistry';
 import { LovableCompiler } from './compiler';
@@ -89,8 +88,8 @@ export class EnhancedLovableRuntime {
       ...(this.config.enableHMR && {
         module: {
           hot: {
-            accept: (callback?: Function) => this.hmr.accept('current', callback),
-            dispose: (callback: Function) => this.hmr.dispose('current', callback),
+            accept: (callback?: HMRAcceptCallback) => this.hmr.accept('current', callback),
+            dispose: (callback: HMRDisposeCallback) => this.hmr.dispose('current', callback),
             invalidate: () => this.hmr.invalidate('current')
           }
         }

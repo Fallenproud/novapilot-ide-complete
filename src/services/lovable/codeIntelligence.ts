@@ -1,359 +1,279 @@
-import { LovableLanguageService, CompletionItem, Diagnostic, HoverInfo, DiagnosticSeverity } from './languageService';
+import { MonacoLanguageService } from './languageService';
+import type { Diagnostic, CompletionItem, HoverInfo } from './languageService';
 
-// Re-export types that other modules need
-export { Diagnostic, DiagnosticSeverity } from './languageService';
+export { type Diagnostic, type CompletionItem, type HoverInfo };
 
-export interface CodeAction {
+export interface SymbolInfo {
+  name: string;
+  kind: string;
+  location: {
+    file: string;
+    line: number;
+    column: number;
+  };
+  documentation?: string;
+}
+
+export interface ReferenceInfo {
+  file: string;
+  line: number;
+  column: number;
+  context: string;
+}
+
+export interface QuickFixAction {
   title: string;
   kind: string;
-  edit?: {
-    changes: {
-      [uri: string]: TextEdit[];
-    };
-  };
-}
-
-export interface TextEdit {
-  range: {
-    start: { line: number; character: number };
-    end: { line: number; character: number };
-  };
-  newText: string;
-}
-
-export interface RenameEdit {
-  range: {
-    start: { line: number; character: number };
-    end: { line: number; character: number };
-  };
-  newText: string;
-}
-
-export interface SymbolInformation {
-  name: string;
-  kind: SymbolKind;
-  location: {
-    uri: string;
+  edit: {
+    file: string;
     range: {
-      start: { line: number; character: number };
-      end: { line: number; character: number };
+      startLine: number;
+      startColumn: number;
+      endLine: number;
+      endColumn: number;
     };
+    newText: string;
   };
-}
-
-export enum SymbolKind {
-  File = 1,
-  Module = 2,
-  Namespace = 3,
-  Package = 4,
-  Class = 5,
-  Method = 6,
-  Property = 7,
-  Field = 8,
-  Constructor = 9,
-  Enum = 10,
-  Interface = 11,
-  Function = 12,
-  Variable = 13,
-  Constant = 14,
-  String = 15,
-  Number = 16,
-  Boolean = 17,
-  Array = 18,
-  Object = 19,
-  Key = 20,
-  Null = 21,
-  EnumMember = 22,
-  Struct = 23,
-  Event = 24,
-  Operator = 25,
-  TypeParameter = 26
 }
 
 export class CodeIntelligenceEngine {
-  private languageService: LovableLanguageService;
+  private languageService: MonacoLanguageService;
   private fileContents: Map<string, string> = new Map();
-  private symbols: Map<string, SymbolInformation[]> = new Map();
+  private symbolCache: Map<string, SymbolInfo[]> = new Map();
+  private diagnosticsCache: Map<string, Diagnostic[]> = new Map();
 
   constructor() {
-    this.languageService = new LovableLanguageService();
+    this.languageService = new MonacoLanguageService();
   }
 
   updateFile(filePath: string, content: string) {
     this.fileContents.set(filePath, content);
-    this.languageService.clearCache(filePath);
-    this.updateSymbols(filePath, content);
+    this.languageService.updateFile(filePath, content);
+    
+    // Clear caches for this file
+    this.symbolCache.delete(filePath);
+    this.diagnosticsCache.delete(filePath);
+    
+    // Emit file change event
+    window.dispatchEvent(new CustomEvent('code-intelligence:file-updated', {
+      detail: { filePath, content }
+    }));
   }
 
-  private updateSymbols(filePath: string, content: string) {
-    const symbols: SymbolInformation[] = [];
-    const lines = content.split('\n');
-
-    lines.forEach((line, lineIndex) => {
-      // Find function declarations
-      const functionMatch = line.match(/(?:function|const|let|var)\s+(\w+)\s*(?:=\s*(?:function|\([^)]*\)\s*=>)|\()/);
-      if (functionMatch) {
-        symbols.push({
-          name: functionMatch[1],
-          kind: line.includes('function') || line.includes('=>') ? SymbolKind.Function : SymbolKind.Variable,
-          location: {
-            uri: filePath,
-            range: {
-              start: { line: lineIndex, character: functionMatch.index! },
-              end: { line: lineIndex, character: functionMatch.index! + functionMatch[0].length }
-            }
-          }
-        });
-      }
-
-      // Find class declarations
-      const classMatch = line.match(/class\s+(\w+)/);
-      if (classMatch) {
-        symbols.push({
-          name: classMatch[1],
-          kind: SymbolKind.Class,
-          location: {
-            uri: filePath,
-            range: {
-              start: { line: lineIndex, character: classMatch.index! },
-              end: { line: lineIndex, character: classMatch.index! + classMatch[0].length }
-            }
-          }
-        });
-      }
-
-      // Find interface declarations
-      const interfaceMatch = line.match(/interface\s+(\w+)/);
-      if (interfaceMatch) {
-        symbols.push({
-          name: interfaceMatch[1],
-          kind: SymbolKind.Interface,
-          location: {
-            uri: filePath,
-            range: {
-              start: { line: lineIndex, character: interfaceMatch.index! },
-              end: { line: lineIndex, character: interfaceMatch.index! + interfaceMatch[0].length }
-            }
-          }
-        });
-      }
-
-      // Find type declarations
-      const typeMatch = line.match(/type\s+(\w+)/);
-      if (typeMatch) {
-        symbols.push({
-          name: typeMatch[1],
-          kind: SymbolKind.TypeParameter,
-          location: {
-            uri: filePath,
-            range: {
-              start: { line: lineIndex, character: typeMatch.index! },
-              end: { line: lineIndex, character: typeMatch.index! + typeMatch[0].length }
-            }
-          }
-        });
-      }
-    });
-
-    this.symbols.set(filePath, symbols);
+  async getCompletions(filePath: string, line: number, column: number): Promise<CompletionItem[]> {
+    return this.languageService.getCompletions(filePath, line, column);
   }
 
-  async getCompletions(
-    filePath: string,
-    position: { line: number; character: number }
-  ): Promise<CompletionItem[]> {
-    const content = this.fileContents.get(filePath);
-    if (!content) return [];
-
-    return this.languageService.getCompletions(content, position, filePath);
+  async getHoverInfo(filePath: string, line: number, column: number): Promise<HoverInfo | null> {
+    return this.languageService.getHoverInfo(filePath, line, column);
   }
 
   async getDiagnostics(filePath: string): Promise<Diagnostic[]> {
-    const content = this.fileContents.get(filePath);
-    if (!content) return [];
-
-    return this.languageService.getDiagnostics(content, filePath);
-  }
-
-  async getHoverInfo(
-    filePath: string,
-    position: { line: number; character: number }
-  ): Promise<HoverInfo | null> {
-    const content = this.fileContents.get(filePath);
-    if (!content) return null;
-
-    return this.languageService.getHoverInfo(content, position, filePath);
-  }
-
-  async getCodeActions(
-    filePath: string,
-    range: {
-      start: { line: number; character: number };
-      end: { line: number; character: number };
-    },
-    diagnostics: Diagnostic[]
-  ): Promise<CodeAction[]> {
-    const actions: CodeAction[] = [];
-    const content = this.fileContents.get(filePath);
-    if (!content) return actions;
-
-    // Add quick fixes for common issues
-    diagnostics.forEach(diagnostic => {
-      if (diagnostic.code === 'no-console') {
-        actions.push({
-          title: 'Remove console.log',
-          kind: 'quickfix',
-          edit: {
-            changes: {
-              [filePath]: [{
-                range: diagnostic.range,
-                newText: ''
-              }]
-            }
-          }
-        });
-      }
-
-      if (diagnostic.code === 'unused-variable') {
-        actions.push({
-          title: 'Remove unused variable',
-          kind: 'quickfix',
-          edit: {
-            changes: {
-              [filePath]: [{
-                range: {
-                  start: { line: diagnostic.range.start.line, character: 0 },
-                  end: { line: diagnostic.range.start.line + 1, character: 0 }
-                },
-                newText: ''
-              }]
-            }
-          }
-        });
-      }
-    });
-
-    // Add refactoring actions
-    const lines = content.split('\n');
-    const currentLine = lines[range.start.line] || '';
-    
-    // Extract function refactoring
-    if (currentLine.includes('function') || currentLine.includes('=>')) {
-      actions.push({
-        title: 'Extract to new file',
-        kind: 'refactor.extract',
-        edit: {
-          changes: {
-            [filePath]: [] // Would implement the actual extraction logic
-          }
-        }
-      });
+    if (this.diagnosticsCache.has(filePath)) {
+      return this.diagnosticsCache.get(filePath)!;
     }
 
-    return actions;
+    const diagnostics = await this.languageService.getDiagnostics(filePath);
+    this.diagnosticsCache.set(filePath, diagnostics);
+    return diagnostics;
   }
 
-  async findReferences(
-    filePath: string,
-    position: { line: number; character: number }
-  ): Promise<SymbolInformation[]> {
-    const content = this.fileContents.get(filePath);
-    if (!content) return [];
-
-    const lines = content.split('\n');
-    const currentLine = lines[position.line] || '';
+  async findSymbols(query: string): Promise<SymbolInfo[]> {
+    const allSymbols: SymbolInfo[] = [];
     
-    // Extract word at cursor
-    const wordMatch = currentLine.match(/\w+/g);
-    if (!wordMatch) return [];
-
-    let wordAtCursor = '';
-    let currentPos = 0;
-    
-    for (const word of wordMatch) {
-      const wordStart = currentLine.indexOf(word, currentPos);
-      const wordEnd = wordStart + word.length;
+    for (const [filePath, content] of this.fileContents.entries()) {
+      if (!this.symbolCache.has(filePath)) {
+        const symbols = await this.extractSymbols(filePath, content);
+        this.symbolCache.set(filePath, symbols);
+      }
       
-      if (position.character >= wordStart && position.character <= wordEnd) {
-        wordAtCursor = word;
-        break;
-      }
-      currentPos = wordEnd;
+      const symbols = this.symbolCache.get(filePath)!;
+      const matchingSymbols = symbols.filter(symbol => 
+        symbol.name.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      allSymbols.push(...matchingSymbols);
     }
+    
+    return allSymbols.slice(0, 50); // Limit results
+  }
 
-    if (!wordAtCursor) return [];
-
-    const references: SymbolInformation[] = [];
-
-    // Search across all files
+  async findReferences(filePath: string, line: number, column: number): Promise<ReferenceInfo[]> {
+    const references: ReferenceInfo[] = [];
+    const content = this.fileContents.get(filePath);
+    
+    if (!content) return references;
+    
+    // Simple reference finding - can be enhanced with AST parsing
+    const lines = content.split('\n');
+    const currentLine = lines[line - 1];
+    
+    if (!currentLine) return references;
+    
+    // Extract word at position
+    const wordMatch = currentLine.slice(0, column).match(/\w+$/);
+    if (!wordMatch) return references;
+    
+    const word = wordMatch[0];
+    
+    // Search for references across all files
     for (const [searchFilePath, searchContent] of this.fileContents.entries()) {
       const searchLines = searchContent.split('\n');
-      searchLines.forEach((line, lineIndex) => {
-        const regex = new RegExp(`\\b${wordAtCursor}\\b`, 'g');
+      
+      searchLines.forEach((searchLine, lineIndex) => {
+        const regex = new RegExp(`\\b${word}\\b`, 'g');
         let match;
-        while ((match = regex.exec(line)) !== null) {
+        
+        while ((match = regex.exec(searchLine)) !== null) {
           references.push({
-            name: wordAtCursor,
-            kind: SymbolKind.Variable, // Default kind
-            location: {
-              uri: searchFilePath,
-              range: {
-                start: { line: lineIndex, character: match.index },
-                end: { line: lineIndex, character: match.index + wordAtCursor.length }
-              }
-            }
+            file: searchFilePath,
+            line: lineIndex + 1,
+            column: match.index + 1,
+            context: searchLine.trim()
           });
         }
       });
     }
-
+    
     return references;
   }
 
-  async renameSymbol(
-    filePath: string,
-    position: { line: number; character: number },
-    newName: string
-  ): Promise<{ [uri: string]: RenameEdit[] }> {
-    const references = await this.findReferences(filePath, position);
-    const edits: { [uri: string]: RenameEdit[] } = {};
-
+  async renameSymbol(filePath: string, line: number, column: number, newName: string): Promise<{file: string, edits: Array<{range: any, newText: string}>}[]> {
+    const references = await this.findReferences(filePath, line, column);
+    const edits: {file: string, edits: Array<{range: any, newText: string}>}[] = [];
+    
+    // Group references by file
+    const fileGroups = new Map<string, ReferenceInfo[]>();
+    
     references.forEach(ref => {
-      if (!edits[ref.location.uri]) {
-        edits[ref.location.uri] = [];
+      if (!fileGroups.has(ref.file)) {
+        fileGroups.set(ref.file, []);
       }
-      edits[ref.location.uri].push({
-        range: ref.location.range,
-        newText: newName
-      });
+      fileGroups.get(ref.file)!.push(ref);
     });
-
+    
+    // Create edits for each file
+    fileGroups.forEach((refs, file) => {
+      const fileEdits = refs.map(ref => ({
+        range: {
+          startLine: ref.line,
+          startColumn: ref.column,
+          endLine: ref.line,
+          endColumn: ref.column + newName.length
+        },
+        newText: newName
+      }));
+      
+      edits.push({ file, edits: fileEdits });
+    });
+    
     return edits;
   }
 
-  getDocumentSymbols(filePath: string): SymbolInformation[] {
-    return this.symbols.get(filePath) || [];
+  async getQuickFixes(filePath: string, line: number, column: number): Promise<QuickFixAction[]> {
+    const diagnostics = await this.getDiagnostics(filePath);
+    const fixes: QuickFixAction[] = [];
+    
+    // Find diagnostics at the given position
+    const relevantDiagnostics = diagnostics.filter(diagnostic => 
+      diagnostic.line >= line - 1 && diagnostic.line <= line + 1
+    );
+    
+    relevantDiagnostics.forEach(diagnostic => {
+      // Generate quick fixes based on diagnostic type
+      if (diagnostic.message.includes('not found') || diagnostic.message.includes('undefined')) {
+        fixes.push({
+          title: `Add import for missing symbol`,
+          kind: 'quickfix',
+          edit: {
+            file: filePath,
+            range: {
+              startLine: 1,
+              startColumn: 1,
+              endLine: 1,
+              endColumn: 1
+            },
+            newText: `// TODO: Add import\n`
+          }
+        });
+      }
+      
+      if (diagnostic.message.includes('unused')) {
+        fixes.push({
+          title: `Remove unused declaration`,
+          kind: 'quickfix',
+          edit: {
+            file: filePath,
+            range: {
+              startLine: diagnostic.line,
+              startColumn: 1,
+              endLine: diagnostic.line + 1,
+              endColumn: 1
+            },
+            newText: ''
+          }
+        });
+      }
+    });
+    
+    return fixes;
   }
 
-  getWorkspaceSymbols(query?: string): SymbolInformation[] {
-    const allSymbols: SymbolInformation[] = [];
+  private async extractSymbols(filePath: string, content: string): Promise<SymbolInfo[]> {
+    const symbols: SymbolInfo[] = [];
+    const lines = content.split('\n');
     
-    for (const symbols of this.symbols.values()) {
-      allSymbols.push(...symbols);
-    }
-
-    if (query) {
-      return allSymbols.filter(symbol => 
-        symbol.name.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    return allSymbols;
+    lines.forEach((line, index) => {
+      // Extract function declarations
+      const functionMatch = line.match(/(?:function|const|let|var)\s+(\w+)/);
+      if (functionMatch) {
+        symbols.push({
+          name: functionMatch[1],
+          kind: 'function',
+          location: {
+            file: filePath,
+            line: index + 1,
+            column: functionMatch.index! + 1
+          }
+        });
+      }
+      
+      // Extract class declarations
+      const classMatch = line.match(/class\s+(\w+)/);
+      if (classMatch) {
+        symbols.push({
+          name: classMatch[1],
+          kind: 'class',
+          location: {
+            file: filePath,
+            line: index + 1,
+            column: classMatch.index! + 1
+          }
+        });
+      }
+      
+      // Extract interface declarations
+      const interfaceMatch = line.match(/interface\s+(\w+)/);
+      if (interfaceMatch) {
+        symbols.push({
+          name: interfaceMatch[1],
+          kind: 'interface',
+          location: {
+            file: filePath,
+            line: index + 1,
+            column: interfaceMatch.index! + 1
+          }
+        });
+      }
+    });
+    
+    return symbols;
   }
 
   dispose() {
     this.languageService.dispose();
     this.fileContents.clear();
-    this.symbols.clear();
+    this.symbolCache.clear();
+    this.diagnosticsCache.clear();
   }
 }

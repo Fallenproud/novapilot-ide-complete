@@ -199,7 +199,7 @@ export class HotModuleReplacementEngine {
     console.log('[HMR] Hot Module Replacement disabled');
   }
 
-  dispose() {
+  disposeEngine() {
     // Cleanup all modules
     for (const moduleId of this.moduleRegistry.keys()) {
       this.cleanupModule(moduleId);

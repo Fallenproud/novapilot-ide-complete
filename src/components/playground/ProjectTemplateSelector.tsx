@@ -1,61 +1,67 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
-  FileCode2, 
+  FileText, 
   Plus, 
-  Sparkles, 
-  Code, 
-  Settings,
-  CheckCircle
+  Code2, 
+  Wrench,
+  Sparkles
 } from 'lucide-react';
 import { LovableProjectManager, ProjectTemplate } from '@/services/lovable/projectManager';
 import { VirtualFileSystem } from '@/services/virtualFileSystem';
 import { useProjectStore } from '@/stores/projectStore';
 
 interface ProjectTemplateSelectorProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onProjectCreated: (projectId: string) => void;
+  onProjectCreate?: (projectName: string, templateId: string) => void;
+  className?: string;
 }
 
-const ProjectTemplateSelector: React.FC<ProjectTemplateSelectorProps> = ({
-  isOpen,
-  onClose,
-  onProjectCreated
+const ProjectTemplateSelector: React.FC<ProjectTemplateSelectorProps> = ({ 
+  onProjectCreate, 
+  className = "" 
 }) => {
-  const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [projectName, setProjectName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  const { createProject } = useProjectStore();
+  const { addProject } = useProjectStore();
 
-  // Initialize project manager (in real app, this would come from context)
-  const vfs = new VirtualFileSystem();
+  // Initialize project manager with empty VFS
+  const vfs = new VirtualFileSystem([]);
   const projectManager = new LovableProjectManager(vfs);
   const templates = projectManager.getTemplates();
+
+  const getTemplateIcon = (templateId: string) => {
+    switch (templateId) {
+      case 'react-component':
+        return <Code2 className="h-8 w-8 text-blue-500" />;
+      case 'react-hook':
+        return <Wrench className="h-8 w-8 text-green-500" />;
+      case 'utility-functions':
+        return <Sparkles className="h-8 w-8 text-purple-500" />;
+      default:
+        return <FileText className="h-8 w-8 text-gray-500" />;
+    }
+  };
 
   const handleCreateProject = async () => {
     if (!selectedTemplate || !projectName.trim()) return;
 
     setIsCreating(true);
     try {
-      const project = await projectManager.createFromTemplate(selectedTemplate.id, projectName);
+      const newProject = await projectManager.createFromTemplate(selectedTemplate, projectName);
+      addProject(newProject);
       
-      // Add to store
-      createProject(project.name, project.description);
-      
-      onProjectCreated(project.id);
-      onClose();
+      if (onProjectCreate) {
+        onProjectCreate(projectName, selectedTemplate);
+      }
       
       // Reset form
-      setSelectedTemplate(null);
       setProjectName('');
+      setSelectedTemplate(null);
     } catch (error) {
       console.error('Failed to create project:', error);
     } finally {
@@ -63,180 +69,98 @@ const ProjectTemplateSelector: React.FC<ProjectTemplateSelectorProps> = ({
     }
   };
 
-  const getTemplateIcon = (templateId: string) => {
-    switch (templateId) {
-      case 'react-component':
-        return <Code className="h-5 w-5 text-blue-500" />;
-      case 'react-hook':
-        return <Settings className="h-5 w-5 text-green-500" />;
-      case 'utility-functions':
-        return <FileCode2 className="h-5 w-5 text-purple-500" />;
-      default:
-        return <Sparkles className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-4xl max-h-[80vh] bg-[#161B22] border-[#21262D]">
-        <DialogHeader>
-          <DialogTitle className="text-[#F0F6FC] flex items-center space-x-2">
-            <Plus className="h-5 w-5" />
-            <span>Create New Project</span>
-          </DialogTitle>
-        </DialogHeader>
+    <div className={`space-y-6 ${className}`}>
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-[#F0F6FC] mb-2">Create New Project</h2>
+        <p className="text-[#8B949E]">Choose a template to get started quickly</p>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Template Selection */}
-          <div className="space-y-4">
-            <div>
-              <Label className="text-[#F0F6FC] text-sm font-medium">Choose Template</Label>
-              <p className="text-[#8B949E] text-xs mt-1">
-                Select a template to get started quickly
+      {/* Template Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {templates.map((template: ProjectTemplate) => (
+          <Card 
+            key={template.id}
+            className={`cursor-pointer transition-all border-2 ${
+              selectedTemplate === template.id 
+                ? 'border-[#1F6FEB] bg-[#1F6FEB]/10' 
+                : 'border-[#21262D] bg-[#161B22] hover:border-[#30363D]'
+            }`}
+            onClick={() => setSelectedTemplate(template.id)}
+          >
+            <CardHeader className="text-center pb-3">
+              <div className="flex justify-center mb-3">
+                {getTemplateIcon(template.id)}
+              </div>
+              <CardTitle className="text-[#F0F6FC] text-lg">
+                {template.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-[#8B949E] text-sm mb-4 text-center">
+                {template.description}
               </p>
-            </div>
-
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-3">
-                {templates.map((template) => (
-                  <Card
-                    key={template.id}
-                    className={`cursor-pointer transition-all ${
-                      selectedTemplate?.id === template.id
-                        ? 'border-[#1F6FEB] bg-[#0D1117]'
-                        : 'border-[#21262D] bg-[#161B22] hover:border-[#30363D]'
-                    }`}
-                    onClick={() => setSelectedTemplate(template)}
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          {getTemplateIcon(template.id)}
-                          <CardTitle className="text-sm text-[#F0F6FC]">
-                            {template.name}
-                          </CardTitle>
-                        </div>
-                        {selectedTemplate?.id === template.id && (
-                          <CheckCircle className="h-4 w-4 text-[#1F6FEB]" />
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-xs text-[#8B949E] mb-2">
-                        {template.description}
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {template.files.length} file{template.files.length !== 1 ? 's' : ''}
-                        </Badge>
-                        {template.dependencies && (
-                          <Badge variant="outline" className="text-xs">
-                            {template.dependencies.length} dependencies
-                          </Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+              <div className="flex flex-wrap gap-1 justify-center">
+                {template.files.slice(0, 3).map((file, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    {file.language}
+                  </Badge>
                 ))}
+                {template.files.length > 3 && (
+                  <Badge variant="secondary" className="text-xs">
+                    +{template.files.length - 3}
+                  </Badge>
+                )}
               </div>
-            </ScrollArea>
-          </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-          {/* Project Configuration */}
-          <div className="space-y-4">
+      {/* Project Creation Form */}
+      {selectedTemplate && (
+        <Card className="bg-[#161B22] border-[#21262D]">
+          <CardHeader>
+            <CardTitle className="text-[#F0F6FC] flex items-center space-x-2">
+              <Plus className="h-5 w-5" />
+              <span>Create Project</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
-              <Label className="text-[#F0F6FC] text-sm font-medium">Project Details</Label>
-              <p className="text-[#8B949E] text-xs mt-1">
-                Configure your new project
-              </p>
+              <label className="text-[#F0F6FC] text-sm font-medium mb-2 block">
+                Project Name
+              </label>
+              <Input
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="Enter project name..."
+                className="bg-[#0D1117] border-[#21262D] text-[#F0F6FC]"
+              />
             </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="projectName" className="text-[#F0F6FC] text-sm">
-                  Project Name *
-                </Label>
-                <Input
-                  id="projectName"
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="Enter project name..."
-                  className="bg-[#0D1117] border-[#21262D] text-[#F0F6FC] mt-1"
-                />
-              </div>
-
-              {selectedTemplate && (
-                <div className="space-y-3">
-                  <Label className="text-[#F0F6FC] text-sm">Template Preview</Label>
-                  <Card className="bg-[#0D1117] border-[#21262D]">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center space-x-2">
-                        {getTemplateIcon(selectedTemplate.id)}
-                        <CardTitle className="text-sm text-[#F0F6FC]">
-                          {selectedTemplate.name}
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-xs text-[#8B949E] mb-3">
-                        {selectedTemplate.description}
-                      </p>
-                      
-                      <div className="space-y-2">
-                        <Label className="text-[#F0F6FC] text-xs">Files included:</Label>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
-                          {selectedTemplate.files.map((file, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center space-x-2 text-xs"
-                            >
-                              <FileCode2 className="h-3 w-3 text-[#8B949E]" />
-                              <span className="text-[#F0F6FC] font-mono">
-                                {file.path}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {file.language}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
+            
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleCreateProject}
+                disabled={!projectName.trim() || isCreating}
+                className="flex-1"
+              >
+                {isCreating ? 'Creating...' : 'Create Project'}
+              </Button>
               <Button
                 variant="outline"
-                onClick={onClose}
-                className="border-[#21262D] text-[#8B949E] hover:text-[#F0F6FC]"
+                onClick={() => {
+                  setSelectedTemplate(null);
+                  setProjectName('');
+                }}
               >
                 Cancel
               </Button>
-              <Button
-                onClick={handleCreateProject}
-                disabled={!selectedTemplate || !projectName.trim() || isCreating}
-                className="bg-[#1F6FEB] hover:bg-[#1F6FEB]/90"
-              >
-                {isCreating ? (
-                  <>
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Project
-                  </>
-                )}
-              </Button>
             </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +20,8 @@ interface ProjectAnalyticsProps {
 }
 
 const ProjectAnalytics: React.FC<ProjectAnalyticsProps> = ({ project, className = "" }) => {
-  // Initialize project manager (in real app, this would come from context)
-  const vfs = new VirtualFileSystem();
+  // Initialize project manager with project files
+  const vfs = new VirtualFileSystem(project.files);
   const projectManager = new LovableProjectManager(vfs);
   const analysis = projectManager.analyzeProject(project);
 
