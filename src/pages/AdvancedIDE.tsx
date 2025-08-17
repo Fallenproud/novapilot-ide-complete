@@ -198,18 +198,18 @@ const AdvancedIDE = () => {
 
   // AI Chat Panel
   const AIChatPanel = () => (
-    <div className="h-full bg-sidebar flex flex-col border-r border-sidebar-border">
-      <div className="p-3 border-b border-sidebar-border bg-sidebar-accent">
+    <div className="h-full bg-sidebar flex flex-col border-r border-sidebar-border rounded-r-xl overflow-hidden">
+      <div className="p-4 border-b border-sidebar-border bg-sidebar-accent">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-sidebar-foreground">AI Assistant</h3>
-          <MessageSquare className="h-4 w-4 text-sidebar-primary" />
+          <h3 className="text-lg font-semibold text-sidebar-foreground">AI Assistant</h3>
+          <MessageSquare className="h-5 w-5 text-sidebar-primary" />
         </div>
       </div>
-      <div className="p-3 border-b border-sidebar-border">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-hidden">
+          <ChatMessages />
+        </div>
         <PromptInput />
-      </div>
-      <div className="flex-1 overflow-hidden">
-        <ChatMessages />
       </div>
     </div>
   );
@@ -386,20 +386,20 @@ const AdvancedIDE = () => {
         </div>
 
         {/* Main IDE Layout */}
-        <div className="flex-1 overflow-hidden">
-          <ResizablePanelGroup direction="horizontal" className="h-full">
+        <div className="flex-1 overflow-hidden p-4">
+          <ResizablePanelGroup direction="horizontal" className="h-full gap-6">
             {/* Left Panel */}
             {leftPanelOpen && (
               <>
-                <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+                <ResizablePanel defaultSize={25} minSize={20} maxSize={45}>
                   <Tabs value={leftPanelMode} onValueChange={(value) => setLeftPanelMode(value as any)} className="h-full">
-                    <TabsList className="w-full bg-sidebar-accent border-b border-sidebar-border rounded-none">
+                    <TabsList className="w-full bg-sidebar-accent border-b border-sidebar-border rounded-t-xl">
                       <TabsTrigger value="chat" className="flex-1">
-                        <MessageSquare className="h-4 w-4 mr-1" />
+                        <MessageSquare className="h-4 w-4 mr-2" />
                         AI Chat
                       </TabsTrigger>
                       <TabsTrigger value="files" className="flex-1">
-                        <FileText className="h-4 w-4 mr-1" />
+                        <FileText className="h-4 w-4 mr-2" />
                         Files
                       </TabsTrigger>
                     </TabsList>
@@ -411,7 +411,7 @@ const AdvancedIDE = () => {
                     </TabsContent>
                   </Tabs>
                 </ResizablePanel>
-                <ResizableHandle />
+                <ResizableHandle className="w-2 bg-transparent hover:bg-border/50 transition-colors" />
               </>
             )}
 
@@ -419,12 +419,12 @@ const AdvancedIDE = () => {
             {centerPanelOpen && (
               <>
                 <ResizablePanel 
-                  defaultSize={rightPanelOpen ? (leftPanelOpen ? 50 : 60) : (leftPanelOpen ? 70 : 100)} 
+                  defaultSize={rightPanelOpen ? (leftPanelOpen ? 45 : 60) : (leftPanelOpen ? 70 : 100)} 
                   minSize={30}
                 >
-                  <div className="h-full flex flex-col">
+                  <div className="h-full flex flex-col bg-card rounded-xl border border-border overflow-hidden">
                     {/* Editor Tabs */}
-                    <div className="border-b border-border bg-muted/20">
+                    <div className="border-b border-border bg-muted/20 rounded-t-xl">
                       <EditorTabs />
                     </div>
 
@@ -437,7 +437,7 @@ const AdvancedIDE = () => {
                               <MonacoEditor />
                             </div>
                           </ResizablePanel>
-                          <ResizableHandle />
+                          <ResizableHandle className="h-2 bg-transparent hover:bg-border/50 transition-colors" />
                           <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
                             <TerminalPanel />
                           </ResizablePanel>
@@ -453,7 +453,7 @@ const AdvancedIDE = () => {
                     <StatusBar />
                   </div>
                 </ResizablePanel>
-                {rightPanelOpen && <ResizableHandle />}
+                {rightPanelOpen && <ResizableHandle className="w-2 bg-transparent hover:bg-border/50 transition-colors" />}
               </>
             )}
 
@@ -464,10 +464,12 @@ const AdvancedIDE = () => {
                 minSize={rightPanelMode === 'preview' ? 20 : 10}
                 maxSize={centerPanelOpen ? 50 : 80}
               >
-                <DynamicPreview 
-                  mode={rightPanelMode}
-                  onModeChange={setRightPanelMode}
-                />
+                <div className="h-full bg-card rounded-xl border border-border overflow-hidden">
+                  <DynamicPreview 
+                    mode={rightPanelMode}
+                    onModeChange={setRightPanelMode}
+                  />
+                </div>
               </ResizablePanel>
             )}
           </ResizablePanelGroup>

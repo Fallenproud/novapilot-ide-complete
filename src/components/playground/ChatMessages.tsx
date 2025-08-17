@@ -3,7 +3,18 @@ import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Bot, User, Clock } from 'lucide-react';
+import { 
+  Bot, 
+  User, 
+  Clock, 
+  Code2, 
+  Lightbulb, 
+  FileText, 
+  CheckCircle, 
+  AlertCircle,
+  ArrowDown,
+  Zap
+} from 'lucide-react';
 import { useAIStore } from '@/stores/aiStore';
 
 interface Message {
@@ -11,7 +22,9 @@ interface Message {
   type: 'user' | 'ai' | 'system';
   content: string;
   timestamp: Date;
-  status?: 'sending' | 'sent' | 'error';
+  status?: 'sending' | 'sent' | 'error' | 'thinking' | 'coding' | 'analyzing';
+  workflowStep?: string;
+  progress?: number;
 }
 
 const ChatMessages = () => {
@@ -22,125 +35,210 @@ const ChatMessages = () => {
     {
       id: '1',
       type: 'system',
-      content: 'AI Workflow initialized. Ready to assist with your development needs.',
-      timestamp: new Date(Date.now() - 60000),
+      content: 'NovaPilot AI Assistant initialized. Ready to help you build amazing applications.',
+      timestamp: new Date(Date.now() - 120000),
       status: 'sent'
     },
     {
       id: '2',
       type: 'user',
       content: 'Create a modern web application with user authentication and dashboard',
-      timestamp: new Date(Date.now() - 30000),
+      timestamp: new Date(Date.now() - 60000),
       status: 'sent'
     },
     {
       id: '3',
       type: 'ai',
-      content: 'I\'ll help you create a modern web application with authentication and dashboard. Starting with the project structure and core components...',
-      timestamp: new Date(Date.now() - 15000),
+      content: 'Perfect! I\'ll create a modern web application with authentication and dashboard for you.',
+      timestamp: new Date(Date.now() - 50000),
+      status: 'analyzing',
+      workflowStep: 'Analyzing requirements'
+    },
+    {
+      id: '4',
+      type: 'ai',
+      content: 'Setting up project structure with React, TypeScript, and Tailwind CSS...',
+      timestamp: new Date(Date.now() - 40000),
+      status: 'coding',
+      workflowStep: 'Creating project structure',
+      progress: 25
+    },
+    {
+      id: '5',
+      type: 'ai',
+      content: 'Implementing authentication system with login, register, and protected routes...',
+      timestamp: new Date(Date.now() - 30000),
+      status: 'coding',
+      workflowStep: 'Building authentication',
+      progress: 60
+    },
+    {
+      id: '6',
+      type: 'ai',
+      content: 'Creating responsive dashboard with navigation, widgets, and data visualization...',
+      timestamp: new Date(Date.now() - 20000),
+      status: 'coding',
+      workflowStep: 'Designing dashboard',
+      progress: 85
+    },
+    {
+      id: '7',
+      type: 'ai',
+      content: 'Your modern web application is ready! I\'ve created a complete authentication system with a responsive dashboard featuring user management, analytics widgets, and a clean interface.',
+      timestamp: new Date(Date.now() - 10000),
       status: 'sent'
     }
   ];
 
   const allMessages = messages.length > 0 ? messages : sampleMessages;
 
-  const getMessageIcon = (type: string) => {
-    switch (type) {
-      case 'user':
-        return <User className="h-4 w-4" />;
-      case 'ai':
-        return <Bot className="h-4 w-4" />;
+  const getMessageIcon = (type: string, status?: string) => {
+    if (type === 'user') return <User className="h-4 w-4" />;
+    if (type === 'system') return <Zap className="h-4 w-4" />;
+    
+    // AI status-specific icons
+    switch (status) {
+      case 'thinking':
+      case 'analyzing':
+        return <Lightbulb className="h-4 w-4" />;
+      case 'coding':
+        return <Code2 className="h-4 w-4" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'sent':
+        return <CheckCircle className="h-4 w-4" />;
       default:
-        return <Clock className="h-4 w-4" />;
+        return <Bot className="h-4 w-4" />;
     }
   };
 
-  const getMessageBg = (type: string) => {
+  const getMessageBg = (type: string, status?: string) => {
     switch (type) {
       case 'user':
-        return 'bg-[#1F6FEB]/10 border-[#1F6FEB]/20';
+        return 'bg-primary/5 border-primary/20';
+      case 'system':
+        return 'bg-accent/50 border-accent';
       case 'ai':
-        return 'bg-[#21262D] border-[#30363D]';
+        if (status === 'error') return 'bg-destructive/5 border-destructive/20';
+        if (status === 'thinking' || status === 'analyzing') return 'bg-yellow-500/5 border-yellow-500/20';
+        if (status === 'coding') return 'bg-green-500/5 border-green-500/20';
+        return 'bg-muted/50 border-border';
       default:
-        return 'bg-[#161B22] border-[#21262D]';
+        return 'bg-card border-border';
     }
+  };
+
+  const renderWorkflowConnector = (index: number, isLast: boolean) => {
+    if (isLast) return null;
+    return (
+      <div className="flex justify-center py-2">
+        <div className="w-px h-4 bg-border opacity-50">
+          <ArrowDown className="h-3 w-3 text-muted-foreground mx-auto" />
+        </div>
+      </div>
+    );
+  };
+
+  const renderProgressBar = (progress?: number) => {
+    if (!progress) return null;
+    return (
+      <div className="mt-2 w-full bg-muted rounded-full h-1.5">
+        <div 
+          className="bg-primary h-1.5 rounded-full transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    );
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {allMessages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex items-start space-x-3 p-3 rounded-lg border ${getMessageBg(message.type)}`}
-            >
-              <Avatar className="h-6 w-6 flex-shrink-0">
-                <AvatarFallback className="bg-[#30363D] text-[#F0F6FC] text-xs">
-                  {getMessageIcon(message.type)}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="text-xs font-medium text-[#F0F6FC] capitalize">
-                    {message.type === 'ai' ? 'NovaPilot' : message.type}
-                  </span>
-                  <span className="text-xs text-[#8B949E]">
-                    {message.timestamp.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </span>
-                  {message.status && (
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs px-1.5 py-0.5 ${
-                        message.status === 'error' 
-                          ? 'bg-red-500/10 text-red-400 border-red-500/20' 
-                          : message.status === 'sending'
-                          ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                          : 'bg-green-500/10 text-green-400 border-green-500/20'
-                      }`}
-                    >
-                      {message.status}
-                    </Badge>
-                  )}
-                </div>
+    <div className="h-full flex flex-col bg-background">
+      <ScrollArea className="flex-1 p-6">
+        <div className="space-y-2">
+          {allMessages.map((message, index) => (
+            <React.Fragment key={message.id}>
+              <div className={`flex items-start space-x-4 p-4 rounded-xl border transition-all duration-200 ${getMessageBg(message.type, message.status)}`}>
+                <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-background">
+                  <AvatarFallback className="bg-muted text-foreground text-sm">
+                    {getMessageIcon(message.type, message.status)}
+                  </AvatarFallback>
+                </Avatar>
                 
-                <div className="text-sm text-[#F0F6FC] leading-relaxed break-words">
-                  {message.content}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <span className="text-sm font-semibold text-foreground">
+                      {message.type === 'ai' ? 'NovaPilot' : message.type === 'system' ? 'System' : 'You'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {message.timestamp.toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </span>
+                    {message.status && message.status !== 'sent' && (
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-xs px-2 py-0.5 ${
+                          message.status === 'error' 
+                            ? 'bg-destructive/10 text-destructive border-destructive/20' 
+                            : message.status === 'thinking' || message.status === 'analyzing'
+                            ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+                            : message.status === 'coding'
+                            ? 'bg-green-500/10 text-green-600 border-green-500/20'
+                            : 'bg-primary/10 text-primary border-primary/20'
+                        }`}
+                      >
+                        {message.status}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {message.workflowStep && (
+                    <div className="text-xs text-muted-foreground mb-2 font-medium">
+                      {message.workflowStep}
+                    </div>
+                  )}
+                  
+                  <div className="text-sm text-foreground leading-relaxed break-words">
+                    {message.content}
+                  </div>
+                  
+                  {renderProgressBar(message.progress)}
                 </div>
               </div>
-            </div>
+              {renderWorkflowConnector(index, index === allMessages.length - 1)}
+            </React.Fragment>
           ))}
           
           {isProcessing && (
-            <div className="flex items-start space-x-3 p-3 rounded-lg border bg-[#21262D] border-[#30363D]">
-              <Avatar className="h-6 w-6 flex-shrink-0">
-                <AvatarFallback className="bg-[#30363D] text-[#F0F6FC] text-xs">
-                  <Bot className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="text-xs font-medium text-[#F0F6FC]">NovaPilot</span>
-                  <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-[#1F6FEB]/10 text-[#1F6FEB] border-[#1F6FEB]/20">
-                    processing
-                  </Badge>
-                </div>
+            <>
+              {allMessages.length > 0 && renderWorkflowConnector(allMessages.length, false)}
+              <div className="flex items-start space-x-4 p-4 rounded-xl border bg-primary/5 border-primary/20">
+                <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-background">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                    <Lightbulb className="h-4 w-4 animate-pulse" />
+                  </AvatarFallback>
+                </Avatar>
                 
-                <div className="text-sm text-[#8B949E] flex items-center space-x-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-[#1F6FEB] rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-[#1F6FEB] rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-[#1F6FEB] rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <span className="text-sm font-semibold text-foreground">NovaPilot</span>
+                    <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 animate-pulse">
+                      thinking
+                    </Badge>
                   </div>
-                  <span>Analyzing your request...</span>
+                  
+                  <div className="text-sm text-muted-foreground flex items-center space-x-3">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <span>Analyzing your request and planning the solution...</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       </ScrollArea>

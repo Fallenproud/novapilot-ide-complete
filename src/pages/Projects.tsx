@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useNavigate } from "react-router-dom";
+import TemplatesPopup from "@/components/playground/TemplatesPopup";
 
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,6 +118,27 @@ const Projects = () => {
             </div>
           </Card>
         )}
+
+        {/* Quick Templates Section */}
+        <Card className="mb-6 p-6 bg-[#161B22] border-[#30363D]">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium">Quick Start Templates</h3>
+            <Badge variant="outline">Start fast</Badge>
+          </div>
+          <TemplatesPopup 
+            onSelectTemplate={(prompt) => {
+              setNewProjectName('');
+              setNewProjectDescription(prompt);
+              setShowCreateForm(true);
+            }}
+            trigger={
+              <Button variant="outline" className="w-full justify-start">
+                <Plus className="h-4 w-4 mr-2" />
+                Create from Template
+              </Button>
+            }
+          />
+        </Card>
 
         {/* Projects Grid */}
         {filteredProjects.length === 0 ? (
