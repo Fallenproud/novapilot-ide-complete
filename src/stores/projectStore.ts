@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { createSampleProjects } from '@/utils/sampleProjects';
 
 export interface ProjectFile {
   id: string;
@@ -37,6 +38,7 @@ interface ProjectState {
   deleteProject: (id: string) => void;
   setActiveProject: (project: Project) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
+  initializeSampleProjects: () => void;
   
   // File operations
   createFile: (projectId: string, file: Omit<ProjectFile, 'id' | 'lastModified'>) => void;
@@ -56,6 +58,22 @@ export const useProjectStore = create<ProjectState>()(
       get allFiles() {
         const state = get();
         return state.activeProject?.files || [];
+      },
+
+      initializeSampleProjects: () => {
+        const state = get();
+        // Only initialize if no projects exist
+        if (state.projects.length === 0) {
+          const sampleProjects = createSampleProjects();
+          const firstProject = sampleProjects[0];
+          const firstFile = firstProject.files[0];
+          
+          set({
+            projects: sampleProjects,
+            activeProject: firstProject,
+            activeFile: firstFile
+          });
+        }
       },
 
       createProject: (name: string, description: string) => {
@@ -90,7 +108,11 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       setActiveProject: (project: Project) => {
-        set({ activeProject: project, activeFile: null });
+        const firstFile = project.files.length > 0 ? project.files[0] : null;
+        set({ 
+          activeProject: project, 
+          activeFile: firstFile 
+        });
       },
 
       updateProject: (id: string, updates: Partial<Project>) => {

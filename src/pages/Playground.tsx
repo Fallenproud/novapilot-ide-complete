@@ -24,6 +24,7 @@ import CodeIntelligenceProvider from "@/components/playground/CodeIntelligencePr
 import IntelliSensePanel from "@/components/playground/IntelliSensePanel";
 import { useAIStore } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useEditorStore } from "@/stores/editorStore";
 
 const Playground = () => {
   const navigate = useNavigate();
@@ -34,7 +35,26 @@ const Playground = () => {
   const [showKeyboardHints, setShowKeyboardHints] = useState(false);
   const [showIntelliSense, setShowIntelliSense] = useState(false);
   const { isProcessing } = useAIStore();
-  const { activeProject } = useProjectStore();
+  const { activeProject, initializeSampleProjects } = useProjectStore();
+  const { openTab } = useEditorStore();
+
+  // Initialize sample projects and open first file
+  useEffect(() => {
+    initializeSampleProjects();
+  }, [initializeSampleProjects]);
+
+  // Auto-open first file when active project changes
+  useEffect(() => {
+    if (activeProject && activeProject.files.length > 0) {
+      const firstFile = activeProject.files[0];
+      openTab({
+        id: firstFile.id,
+        name: firstFile.name,
+        path: firstFile.path,
+        language: firstFile.language
+      });
+    }
+  }, [activeProject, openTab]);
 
   const handleToggleExecution = () => {
     setIsRunning(!isRunning);
