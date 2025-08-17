@@ -43,7 +43,7 @@ const Playground = () => {
       
       // If no active project is set, set the first available project as active
       if (!activeProject && projects.length > 0) {
-        setActiveProject(projects[0].id);
+        setActiveProject(projects[0]);
       }
     };
     
