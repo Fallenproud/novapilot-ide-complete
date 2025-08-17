@@ -51,7 +51,8 @@ const Playground = () => {
         id: firstFile.id,
         name: firstFile.name,
         path: firstFile.path,
-        language: firstFile.language
+        language: firstFile.language,
+        fileId: firstFile.id
       });
     }
   }, [activeProject, openTab]);

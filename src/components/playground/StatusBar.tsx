@@ -42,13 +42,13 @@ const StatusBar = () => {
           <>
             <div className="flex items-center space-x-1">
               <FileText className="h-3 w-3" />
-              <span className="text-[#F0F6FC]">{activeTab.fileName}</span>
+              <span className="text-[#F0F6FC]">{activeTab.name}</span>
               {activeTab.isDirty && (
                 <span className="text-[#FFA657]">●</span>
               )}
             </div>
             <div className="text-[#6E7681]">
-              {activeTab.filePath}
+              {activeTab.path}
             </div>
             <Badge variant="outline" className="h-4 text-[10px] border-[#30363D]">
               {activeTab.language}

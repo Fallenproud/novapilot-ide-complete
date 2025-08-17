@@ -21,6 +21,7 @@ interface EditorStore {
   // Actions
   openTab: (tab: Omit<EditorTab, 'isDirty'>) => void;
   closeTab: (tabId: string) => void;
+  closeAllTabs: () => void;
   setActiveTab: (tabId: string) => void;
   markTabDirty: (tabId: string, isDirty: boolean) => void;
   updateTabContent: (tabId: string, content: string) => void;
@@ -29,6 +30,7 @@ interface EditorStore {
   setTheme: (theme: 'light' | 'dark') => void;
   setFontSize: (size: number) => void;
   setWordWrap: (enabled: boolean) => void;
+  toggleWordWrap: () => void;
   setMinimap: (enabled: boolean) => void;
 }
 
@@ -81,6 +83,13 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       activeTabId: newActiveTabId
     });
   },
+
+  closeAllTabs: () => {
+    set({ 
+      tabs: [],
+      activeTabId: null
+    });
+  },
   
   setActiveTab: (tabId) => {
     set({ activeTabId: tabId });
@@ -101,5 +110,6 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   setTheme: (theme) => set({ theme }),
   setFontSize: (fontSize) => set({ fontSize }),
   setWordWrap: (wordWrap) => set({ wordWrap }),
+  toggleWordWrap: () => set(state => ({ wordWrap: !state.wordWrap })),
   setMinimap: (minimap) => set({ minimap }),
 }));
