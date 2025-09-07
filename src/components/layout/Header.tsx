@@ -11,7 +11,10 @@ import {
   Settings,
   Command,
   User,
-  Bell
+  Bell,
+  BarChart3,
+  BookOpen,
+  Home
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -62,6 +65,16 @@ const Header = () => {
 
           <nav className="flex items-center space-x-2">
             <Button
+              variant={isActive('/dashboard') ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-2"
+            >
+              <Home className="h-4 w-4" />
+              Dashboard
+            </Button>
+
+            <Button
               variant={isActive('/projects') ? 'default' : 'ghost'}
               size="sm"
               onClick={handleProjectsClick}
@@ -89,6 +102,26 @@ const Header = () => {
                   {activeProject.name}
                 </Badge>
               )}
+            </Button>
+
+            <Button
+              variant={isActive('/analytics') ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => navigate('/analytics')}
+              className="flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </Button>
+
+            <Button
+              variant={isActive('/docs') ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => navigate('/docs')}
+              className="flex items-center gap-2"
+            >
+              <BookOpen className="h-4 w-4" />
+              Docs
             </Button>
           </nav>
         </div>
