@@ -34,12 +34,18 @@ import {
   Share2,
   GitBranch,
   Bug,
-  Zap
+  Zap,
+  Plus,
+  Folder,
+  Code,
+  LayoutDashboard,
+  MessageSquare
 } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
+import AdvancedSearch from '@/components/features/AdvancedSearch';
 
 interface CommandAction {
   id: string;
@@ -169,38 +175,57 @@ const CommandPalette = () => {
 
   return (
     <CommandDialog open={open} onOpenChange={handleClose}>
-      <CommandInput
-        placeholder="Type a command or search..."
-        value={search}
-        onValueChange={setSearch}
-      />
-      <CommandList className="max-h-[400px]">
-        <CommandEmpty>No results found.</CommandEmpty>
-        
-        {Object.entries(groupedActions).map(([category, categoryActions], index) => (
-          <div key={category}>
-            {index > 0 && <CommandSeparator />}
-            <CommandGroup heading={categoryLabels[category as keyof typeof categoryLabels]}>
-              {categoryActions.map((action) => {
-                const Icon = action.icon;
-                return (
-                  <CommandItem
-                    key={action.id}
-                    onSelect={action.action}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{action.label}</span>
-                    {action.shortcut && (
-                      <CommandShortcut>{action.shortcut}</CommandShortcut>
-                    )}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </div>
-        ))}
-      </CommandList>
+      <Command className="bg-card border-0 shadow-2xl rounded-xl animate-scale-in">
+        <CommandInput 
+          placeholder="Type a command or search files..." 
+          value={search}
+          onValueChange={setSearch}
+          className="border-0 focus:ring-0 h-12 text-base" 
+        />
+        <CommandList className="max-h-[400px] scrollbar-thin">
+          <CommandEmpty className="py-12 text-center">
+            <Search className="h-8 w-8 mx-auto mb-3 opacity-50" />
+            <p className="text-muted-foreground">No results found.</p>
+            <p className="text-sm text-muted-foreground mt-1">Try a different search term</p>
+          </CommandEmpty>
+          
+          {Object.entries(groupedActions).map(([category, categoryActions], index) => (
+            <div key={category}>
+              {index > 0 && <CommandSeparator />}
+              <CommandGroup heading={categoryLabels[category as keyof typeof categoryLabels]}>
+                {categoryActions.map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <CommandItem
+                      key={action.id}
+                      onSelect={action.action}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-accent/80 transition-colors"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{action.label}</span>
+                      {action.shortcut && (
+                        <CommandShortcut>{action.shortcut}</CommandShortcut>
+                      )}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </div>
+          ))}
+
+          {/* Advanced Search Integration */}
+          <CommandSeparator />
+          <CommandGroup heading="Advanced Tools">
+            <AdvancedSearch>
+              <CommandItem className="hover:bg-accent/80 transition-colors cursor-pointer">
+                <Search className="mr-2 h-4 w-4" />
+                <span>Advanced Search & Replace</span>
+                <CommandShortcut>Ctrl+Shift+F</CommandShortcut>
+              </CommandItem>
+            </AdvancedSearch>
+          </CommandGroup>
+        </CommandList>
+      </Command>
     </CommandDialog>
   );
 };
