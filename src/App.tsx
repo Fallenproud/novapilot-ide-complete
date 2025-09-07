@@ -20,11 +20,12 @@ import Footer from "@/components/layout/Footer";
 import SettingsModal from "@/components/modals/SettingsModal";
 import CommandPalette from "@/components/modals/CommandPalette";
 import { useUIStore } from "@/stores/uiStore";
+import IDESettingsModal from "@/components/modals/IDESettingsModal";
 import { FocusManager } from "@/components/accessibility/FocusManager";
 
 const AppContent = () => {
   const location = useLocation();
-  const { isSettingsOpen, toggleSettings } = useUIStore();
+  const { isSettingsOpen, toggleSettings, isIDESettingsOpen, toggleIDESettings } = useUIStore();
   const isIDERoute = location.pathname.includes('ide') || location.pathname.includes('playground');
   const isAuthRoute = location.pathname.startsWith('/auth');
 
@@ -84,6 +85,10 @@ const AppContent = () => {
           <SettingsModal 
             open={isSettingsOpen} 
             onOpenChange={toggleSettings} 
+          />
+          <IDESettingsModal 
+            open={isIDESettingsOpen} 
+            onOpenChange={toggleIDESettings} 
           />
           <CommandPalette />
           <PerformanceMonitor />

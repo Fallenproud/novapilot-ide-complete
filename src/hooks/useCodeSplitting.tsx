@@ -12,11 +12,13 @@ export const useCodeSplitting = () => {
   ) => {
     const LazyComponent = lazy(factory);
     
-    return (props: any) => (
+    const WrappedComponent = (props: any) => (
       <Suspense fallback={fallback || <LoadingSpinner />}>
         <LazyComponent {...props} />
       </Suspense>
     );
+    
+    return WrappedComponent;
   };
 
   // Preload a component
