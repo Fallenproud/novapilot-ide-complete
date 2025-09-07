@@ -212,14 +212,17 @@ export class LovableCompiler {
     const propObj: Record<string, string> = {};
     
     propPairs.forEach(prop => {
-      const [, name, stringVal, jsVal] = prop.match(/(\w+)(?:="([^"]*)"|={([^}]*)})?/) || [];
-      if (name) {
-        if (stringVal !== undefined) {
-          propObj[name] = `"${stringVal}"`;
-        } else if (jsVal !== undefined) {
-          propObj[name] = jsVal;
-        } else {
-          propObj[name] = 'true';
+      const match = prop.match(/(\w+)(?:="([^"]*)"|={([^}]*)})?/);
+      if (match) {
+        const [, name, stringVal, jsVal] = match;
+        if (name) {
+          if (stringVal !== undefined) {
+            propObj[name] = `"${stringVal}"`;
+          } else if (jsVal !== undefined) {
+            propObj[name] = jsVal;
+          } else {
+            propObj[name] = 'true';
+          }
         }
       }
     });

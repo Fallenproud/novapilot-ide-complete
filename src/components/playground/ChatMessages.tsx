@@ -161,7 +161,7 @@ const ChatMessages = () => {
       <ScrollArea className="flex-1 p-6 scrollbar-thin">
         <div className="space-y-3">
           {allMessages.map((message, index) => (
-            <React.Fragment key={message.id}>
+            <div key={message.id}>
               <div className={`flex items-start space-x-4 p-5 rounded-2xl border transition-all duration-300 shadow-sm hover:shadow-md animate-message-slide-in ${getMessageBg(message.type, message.status)}`}>
                 <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-background shadow-lg">
                   <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-foreground text-sm border border-primary/20">
@@ -212,7 +212,7 @@ const ChatMessages = () => {
                 </div>
               </div>
               {renderWorkflowConnector(index, index === allMessages.length - 1)}
-            </React.Fragment>
+            </div>
           ))}
           
           {isProcessing && (

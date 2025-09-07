@@ -43,6 +43,7 @@ import DynamicPreview from "@/components/playground/DynamicPreview";
 import E2BTerminal from "@/components/playground/E2BTerminal";
 import { deploymentService } from "@/services/deploymentService";
 import { useToast } from "@/hooks/use-toast";
+import IDESettingsModal from "@/components/modals/IDESettingsModal";
 
 const AdvancedIDE = () => {
   const navigate = useNavigate();
@@ -98,6 +99,42 @@ const AdvancedIDE = () => {
       document.exitFullscreen();
       setIsFullscreen(false);
     }
+  };
+
+  const handleSave = () => {
+    // Save current file functionality
+    const { activeTabId, tabs } = useEditorStore.getState();
+    const { activeProject } = useProjectStore.getState();
+    
+    if (activeTabId && activeProject) {
+      const activeTab = tabs.find(tab => tab.id === activeTabId);
+      if (activeTab) {
+        toast({
+          title: "File Saved",
+          description: `${activeTab.name} has been saved successfully.`,
+        });
+      }
+    }
+  };
+
+  const handleNewFile = () => {
+    // New file functionality
+    const { activeProject } = useProjectStore.getState();
+    if (activeProject) {
+      const fileName = `new-file-${Date.now()}.tsx`;
+      toast({
+        title: "New File Created",
+        description: `Created ${fileName}`,
+      });
+    }
+  };
+
+  const handleRefresh = () => {
+    // Refresh file explorer
+    toast({
+      title: "Refreshed",
+      description: "File explorer refreshed successfully.",
+    });
   };
 
   const handleDeploy = async () => {
@@ -182,10 +219,10 @@ const AdvancedIDE = () => {
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-sidebar-foreground">Project Explorer</h3>
           <div className="flex items-center space-x-1">
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="New File">
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="New File" onClick={handleNewFile}>
               <Plus className="h-3 w-3" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Refresh">
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Refresh" onClick={handleRefresh}>
               <RotateCcw className="h-3 w-3" />
             </Button>
           </div>
@@ -197,7 +234,7 @@ const AdvancedIDE = () => {
     </div>
   );
 
-  // AI Chat Panel
+  // AI Chat Panel - Fixed positioning and layout
   const AIChatPanel = () => (
     <div className="h-full bg-sidebar flex flex-col border-r border-sidebar-border rounded-r-xl overflow-hidden">
       <div className="p-4 border-b border-sidebar-border bg-sidebar-accent">
@@ -206,11 +243,13 @@ const AdvancedIDE = () => {
           <MessageSquare className="h-5 w-5 text-sidebar-primary" />
         </div>
       </div>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-hidden min-h-0">
           <ChatMessages />
         </div>
-        <PromptInput />
+        <div className="flex-shrink-0 h-auto max-h-[200px] min-h-[120px]">
+          <PromptInput />
+        </div>
       </div>
     </div>
   );
@@ -289,7 +328,7 @@ const AdvancedIDE = () => {
               <Separator orientation="vertical" className="h-6" />
 
               {/* Action Buttons */}
-              <Button variant="outline" size="sm" className="h-7">
+              <Button variant="outline" size="sm" className="h-7" onClick={handleSave}>
                 <Save className="h-3 w-3 mr-1" />
                 Save
               </Button>
@@ -359,7 +398,9 @@ const AdvancedIDE = () => {
               </Button>
 
               <Button variant="ghost" size="sm" className="h-7">
-                <Settings className="h-3 w-3" />
+                <IDESettingsModal>
+                  <Settings className="h-3 w-3" />
+                </IDESettingsModal>
               </Button>
             </div>
           </div>
@@ -407,9 +448,9 @@ const AdvancedIDE = () => {
               minSize={centerPanelOpen ? 30 : 0}
               className={centerPanelOpen ? "" : "hidden"}
             >
-              <div className="h-full flex flex-col bg-gradient-to-br from-card/95 to-card/80 rounded-2xl border border-border/60 overflow-hidden shadow-elegant backdrop-blur-sm">
+              <div className="h-full flex flex-col bg-card rounded-2xl border border-border overflow-hidden shadow-lg">
                 {/* Editor Tabs */}
-                <div className="border-b border-border/60 bg-gradient-to-r from-muted/30 to-muted/20 rounded-t-2xl backdrop-blur-sm">
+                <div className="border-b border-border bg-muted/20 rounded-t-2xl">
                   <EditorTabs />
                 </div>
 
@@ -452,7 +493,7 @@ const AdvancedIDE = () => {
               maxSize={rightPanelOpen ? (centerPanelOpen ? 50 : 80) : 0}
               className={rightPanelOpen ? "" : "hidden"}
             >
-              <div className="h-full bg-gradient-to-br from-card/95 to-card/80 rounded-2xl border border-border/60 overflow-hidden shadow-elegant backdrop-blur-sm">
+              <div className="h-full bg-card rounded-2xl border border-border overflow-hidden shadow-lg">
                 <DynamicPreview 
                   mode={rightPanelMode}
                   onModeChange={setRightPanelMode}

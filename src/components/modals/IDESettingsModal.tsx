@@ -29,12 +29,11 @@ import {
 import { useEditorStore } from '@/stores/editorStore';
 import { useTheme } from 'next-themes';
 
-interface SettingsModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IDESettingsModalProps {
+  children: React.ReactNode;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => {
+const IDESettingsModal: React.FC<IDESettingsModalProps> = ({ children }) => {
   const { 
     theme: editorTheme, 
     fontSize, 
@@ -49,7 +48,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
   const { theme, setTheme } = useTheme();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -214,4 +216,4 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
   );
 };
 
-export default SettingsModal;
+export default IDESettingsModal;
