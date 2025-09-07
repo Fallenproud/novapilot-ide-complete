@@ -212,17 +212,17 @@ const AdvancedIDE = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [leftPanelOpen, rightPanelOpen, bottomPanelOpen, centerPanelOpen]);
 
-  // Advanced File Tree Component
+  // Advanced File Tree Component - Improved visibility
   const AdvancedFileTree = () => (
-    <div className="h-full bg-sidebar flex flex-col border-r border-sidebar-border">
-      <div className="p-3 border-b border-sidebar-border bg-sidebar-accent">
+    <div className="h-full bg-card/95 flex flex-col border-r border-border/40 backdrop-blur-sm">
+      <div className="p-3 border-b border-border/60 bg-card/80">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-sidebar-foreground">Project Explorer</h3>
+          <h3 className="text-sm font-semibold text-foreground">Project Explorer</h3>
           <div className="flex items-center space-x-1">
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="New File" onClick={handleNewFile}>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-muted/80" title="New File" onClick={handleNewFile}>
               <Plus className="h-3 w-3" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Refresh" onClick={handleRefresh}>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-muted/80" title="Refresh" onClick={handleRefresh}>
               <RotateCcw className="h-3 w-3" />
             </Button>
           </div>
@@ -234,20 +234,20 @@ const AdvancedIDE = () => {
     </div>
   );
 
-  // AI Chat Panel - Fixed positioning and layout
+  // AI Chat Panel - Improved visibility and positioning
   const AIChatPanel = () => (
-    <div className="h-full bg-sidebar flex flex-col border-r border-sidebar-border rounded-r-xl overflow-hidden">
-      <div className="p-4 border-b border-sidebar-border bg-sidebar-accent">
+    <div className="h-full bg-card/95 flex flex-col border-r border-border/40 rounded-r-xl overflow-hidden backdrop-blur-sm">
+      <div className="p-4 border-b border-border/60 bg-card/80">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-sidebar-foreground">AI Assistant</h3>
-          <MessageSquare className="h-5 w-5 text-sidebar-primary" />
+          <h3 className="text-lg font-semibold text-foreground">AI Assistant</h3>
+          <MessageSquare className="h-5 w-5 text-primary" />
         </div>
       </div>
       <div className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 overflow-hidden min-h-0">
           <ChatMessages />
         </div>
-        <div className="flex-shrink-0 h-auto max-h-[200px] min-h-[120px]">
+        <div className="flex-shrink-0 h-auto max-h-[200px] min-h-[120px] bg-card/90 border-t border-border/40">
           <PromptInput />
         </div>
       </div>
@@ -255,9 +255,9 @@ const AdvancedIDE = () => {
   );
 
 
-  // Terminal Panel with E2B Integration
+  // Terminal Panel with E2B Integration - Improved visibility
   const TerminalPanel = () => (
-    <div className="h-full bg-gradient-to-br from-card/95 to-card/80 rounded-xl border border-border/60 overflow-hidden shadow-elegant backdrop-blur-sm">
+    <div className="h-full bg-card/95 rounded-xl border border-border/50 overflow-hidden shadow-lg backdrop-blur-sm">
       <E2BTerminal />
     </div>
   );

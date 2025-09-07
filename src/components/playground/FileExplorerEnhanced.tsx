@@ -105,8 +105,8 @@ const FileExplorerEnhanced = () => {
   const renderFile = (file: any, isActive: boolean = false) => (
     <div
       key={file.id}
-      className={`flex items-center space-x-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-[#21262D] rounded-md transition-colors ${
-        isActive ? 'bg-[#1F6FEB] text-white' : 'text-[#F0F6FC]'
+      className={`flex items-center space-x-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-muted/60 rounded-md transition-colors ${
+        isActive ? 'bg-primary text-primary-foreground' : 'text-foreground'
       }`}
       onClick={() => handleFileClick(file)}
     >
@@ -128,7 +128,7 @@ const FileExplorerEnhanced = () => {
     return (
       <div key={folderPath} className="mb-1">
         <div
-          className="flex items-center space-x-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-[#21262D] rounded-md transition-colors text-[#F0F6FC]"
+          className="flex items-center space-x-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-muted/60 rounded-md transition-colors text-foreground"
           onClick={() => toggleFolder(folderPath)}
         >
           {isExpanded ? (
@@ -154,16 +154,16 @@ const FileExplorerEnhanced = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#161B22]">
+    <div className="h-full flex flex-col bg-card/50">
       {/* Header */}
-      <div className="p-3 border-b border-[#21262D]">
+      <div className="p-3 border-b border-border/40">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-[#F0F6FC]">Files</h3>
+          <h3 className="text-sm font-medium text-foreground">Files</h3>
           <div className="flex items-center space-x-1">
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-muted/60">
               <Plus className="h-3 w-3" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-muted/60">
               <MoreHorizontal className="h-3 w-3" />
             </Button>
           </div>
@@ -176,7 +176,7 @@ const FileExplorerEnhanced = () => {
             placeholder="Search files..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-7 text-xs bg-[#0D1117] border-[#21262D] text-[#F0F6FC] placeholder-[#8B949E]"
+            className="pl-8 h-7 text-xs bg-muted/30 border-border/40 text-foreground placeholder-muted-foreground"
           />
         </div>
       </div>
@@ -198,7 +198,7 @@ const FileExplorerEnhanced = () => {
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-[#21262D] text-xs text-[#8B949E]">
+      <div className="p-2 border-t border-border/40 text-xs text-muted-foreground bg-card/30">
         <div className="flex justify-between items-center">
           <span>{filteredFiles.length} files</span>
           <span>{activeProject.name}</span>

@@ -38,7 +38,7 @@ const EditorTabs = () => {
   }
 
   return (
-    <div className="h-10 bg-[#161B22] border-b border-[#21262D] flex items-center overflow-x-auto">
+    <div className="h-10 bg-card/60 border-b border-border/40 flex items-center overflow-x-auto backdrop-blur-sm">
       {tabs.map((tab) => {
         const isActive = tab.id === activeTabId;
         const file = activeProject?.files.find(f => f.id === tab.fileId);
@@ -46,10 +46,10 @@ const EditorTabs = () => {
         return (
           <div
             key={tab.id}
-            className={`flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer border-r border-[#21262D] min-w-0 ${
+            className={`flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer border-r border-border/40 min-w-0 ${
               isActive 
-                ? 'bg-[#0D1117] text-[#F0F6FC] border-b-2 border-b-[#1F6FEB]' 
-                : 'bg-[#161B22] text-[#8B949E] hover:text-[#F0F6FC] hover:bg-[#21262D]'
+                ? 'bg-card text-foreground border-b-2 border-b-primary' 
+                : 'bg-card/30 text-muted-foreground hover:text-foreground hover:bg-card/60'
             }`}
             onClick={() => setActiveTab(tab.id)}
           >

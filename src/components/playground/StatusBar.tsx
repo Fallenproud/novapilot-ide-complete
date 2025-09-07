@@ -35,22 +35,22 @@ const StatusBar = () => {
   };
 
   return (
-    <div className="h-6 bg-[#161B22] border-t border-[#21262D] px-4 flex items-center justify-between text-xs text-[#8B949E]">
+    <div className="h-6 bg-card/60 border-t border-border/40 px-4 flex items-center justify-between text-xs text-muted-foreground backdrop-blur-sm">
       {/* Left side - File info */}
       <div className="flex items-center space-x-4">
         {activeTab && (
           <>
             <div className="flex items-center space-x-1">
               <FileText className="h-3 w-3" />
-              <span className="text-[#F0F6FC]">{activeTab.name}</span>
+              <span className="text-foreground">{activeTab.name}</span>
               {activeTab.isDirty && (
-                <span className="text-[#FFA657]">●</span>
+                <span className="text-orange-500">●</span>
               )}
             </div>
-            <div className="text-[#6E7681]">
+            <div className="text-muted-foreground">
               {activeTab.path}
             </div>
-            <Badge variant="outline" className="h-4 text-[10px] border-[#30363D]">
+            <Badge variant="outline" className="h-4 text-[10px] border-border/60">
               {activeTab.language}
             </Badge>
           </>
