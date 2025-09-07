@@ -211,7 +211,7 @@ export class LovableCompiler {
     const propPairs = props.match(/(\w+)(?:=(?:"([^"]*)"|{([^}]*)}|\w+))?/g) || [];
     const propObj: Record<string, string> = {};
     
-    propPairs.forEach(prop => {
+    propPairs.forEach((prop: string) => {
       const match = prop.match(/(\w+)(?:="([^"]*)"|={([^}]*)})?/);
       if (match) {
         const [, name, stringVal, jsVal] = match;

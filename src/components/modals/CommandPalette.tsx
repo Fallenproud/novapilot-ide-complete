@@ -1,49 +1,63 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
+  CommandShortcut,
 } from '@/components/ui/command';
-import { useUIStore } from '@/stores/uiStore';
-import { useProjectStore } from '@/stores/projectStore';
-import { useEditorStore } from '@/stores/editorStore';
-import { useNavigate } from 'react-router-dom';
-import {
-  FileText,
-  Settings,
-  FolderOpen,
-  Play,
-  Square,
-  RefreshCw,
+import { 
+  Search, 
+  FileText, 
+  Settings, 
+  Home, 
+  FolderOpen, 
+  Play, 
+  BarChart3, 
+  BookOpen,
+  User,
   Moon,
   Sun,
-  Code,
-  Eye,
+  Code2,
   Terminal,
-  Search,
-  Plus
+  Palette,
+  Keyboard,
+  Bell,
+  Download,
+  Upload,
+  Share2,
+  GitBranch,
+  Bug,
+  Zap
 } from 'lucide-react';
+import { useUIStore } from '@/stores/uiStore';
+import { useProjectStore } from '@/stores/projectStore';
+import { useTheme } from 'next-themes';
+import { toast } from 'sonner';
+
+interface CommandAction {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  shortcut?: string;
+  category: 'navigation' | 'actions' | 'settings' | 'projects' | 'tools';
+  action: () => void;
+  keywords?: string[];
+}
 
 const CommandPalette = () => {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const navigate = useNavigate();
-  
-  const {
-    isCommandPaletteOpen,
-    toggleCommandPalette,
-    toggleSettings,
-    isDarkMode,
-    toggleDarkMode,
-    layout,
-    setLayout
-  } = useUIStore();
-  
-  const { activeProject, projects, createProject } = useProjectStore();
-  const { closeAllTabs, tabs } = useEditorStore();
+  const { theme, setTheme } = useTheme();
+  const { isCommandPaletteOpen, toggleCommandPalette } = useUIStore();
+  const { projects, activeProject, setActiveProject } = useProjectStore();
 
   useEffect(() => {
     setOpen(isCommandPaletteOpen);
@@ -61,108 +75,131 @@ const CommandPalette = () => {
     return () => document.removeEventListener('keydown', down);
   }, [toggleCommandPalette]);
 
-  const handleOpenChange = (open: boolean) => {
-    setOpen(open);
-    if (!open) {
-      toggleCommandPalette();
-    }
-  };
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    toggleCommandPalette();
+    setSearch('');
+  }, [toggleCommandPalette]);
 
-  const runCommand = (command: () => void) => {
-    command();
-    handleOpenChange(false);
+  const createAction = useCallback((
+    id: string,
+    label: string,
+    icon: React.ElementType,
+    action: () => void,
+    category: CommandAction['category'],
+    shortcut?: string,
+    keywords?: string[]
+  ): CommandAction => ({
+    id,
+    label,
+    icon,
+    action: () => {
+      action();
+      handleClose();
+    },
+    category,
+    shortcut,
+    keywords
+  }), [handleClose]);
+
+  const actions: CommandAction[] = [
+    // Navigation
+    createAction('nav-home', 'Go to Home', Home, () => navigate('/'), 'navigation', '⌘H', ['home', 'dashboard']),
+    createAction('nav-projects', 'Go to Projects', FolderOpen, () => navigate('/projects'), 'navigation', '⌘P', ['projects', 'workspace']),
+    createAction('nav-ide', 'Open IDE', Play, () => navigate('/ide'), 'navigation', '⌘I', ['ide', 'editor', 'code']),
+    createAction('nav-analytics', 'View Analytics', BarChart3, () => navigate('/analytics'), 'navigation', '⌘A', ['analytics', 'stats', 'metrics']),
+    createAction('nav-docs', 'Documentation', BookOpen, () => navigate('/docs'), 'navigation', '⌘D', ['docs', 'help', 'documentation']),
+
+    // Settings & Actions
+    createAction('toggle-theme', `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`, theme === 'dark' ? Sun : Moon, () => setTheme(theme === 'dark' ? 'light' : 'dark'), 'settings', '⌘⇧T', ['theme', 'dark', 'light', 'appearance']),
+
+    // Project Actions
+    createAction('new-project', 'Create New Project', FolderOpen, () => {
+      const { createProject } = useProjectStore.getState();
+      const name = `Project ${projects.length + 1}`;
+      createProject(name, 'New project created via command palette');
+      toast.success(`Created project: ${name}`);
+    }, 'projects', '⌘N', ['new', 'create', 'project']),
+  ];
+
+  // Add project-specific actions
+  const projectActions: CommandAction[] = projects.map(project => 
+    createAction(
+      `project-${project.id}`,
+      `Open ${project.name}`,
+      Code2,
+      () => {
+        setActiveProject(project);
+        navigate('/ide');
+      },
+      'projects',
+      undefined,
+      ['project', project.name.toLowerCase(), 'open']
+    )
+  );
+
+  const allActions = [...actions, ...projectActions];
+
+  const filteredActions = search
+    ? allActions.filter(action => {
+        const searchLower = search.toLowerCase();
+        return (
+          action.label.toLowerCase().includes(searchLower) ||
+          action.keywords?.some(keyword => keyword.includes(searchLower)) ||
+          action.category.includes(searchLower)
+        );
+      })
+    : allActions;
+
+  const groupedActions = filteredActions.reduce((acc, action) => {
+    if (!acc[action.category]) {
+      acc[action.category] = [];
+    }
+    acc[action.category].push(action);
+    return acc;
+  }, {} as Record<string, CommandAction[]>);
+
+  const categoryLabels = {
+    navigation: 'Navigation',
+    actions: 'Actions',
+    settings: 'Settings',
+    projects: 'Projects',
+    tools: 'Tools'
   };
 
   return (
-    <CommandDialog open={open} onOpenChange={handleOpenChange}>
-      <CommandInput placeholder="Type a command or search..." />
-      <CommandList>
+    <CommandDialog open={open} onOpenChange={handleClose}>
+      <CommandInput
+        placeholder="Type a command or search..."
+        value={search}
+        onValueChange={setSearch}
+      />
+      <CommandList className="max-h-[400px]">
         <CommandEmpty>No results found.</CommandEmpty>
         
-        <CommandGroup heading="Navigation">
-          <CommandItem onSelect={() => runCommand(() => navigate('/'))}>
-            <FileText className="mr-2 h-4 w-4" />
-            Go to Home
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => navigate('/projects'))}>
-            <FolderOpen className="mr-2 h-4 w-4" />
-            Go to Projects
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => navigate('/ide'))}>
-            <Code className="mr-2 h-4 w-4" />
-            Go to IDE
-          </CommandItem>
-        </CommandGroup>
-
-        <CommandGroup heading="Project Actions">
-          <CommandItem onSelect={() => runCommand(() => createProject('New Project', 'Created via command palette'))}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Project
-          </CommandItem>
-          {activeProject && (
-            <CommandItem onSelect={() => runCommand(() => navigate('/ide'))}>
-              <Play className="mr-2 h-4 w-4" />
-              Open Current Project
-            </CommandItem>
-          )}
-        </CommandGroup>
-
-        <CommandGroup heading="Editor Actions">
-          <CommandItem onSelect={() => runCommand(closeAllTabs)}>
-            <Square className="mr-2 h-4 w-4" />
-            Close All Tabs
-          </CommandItem>
-          {tabs.length > 0 && (
-            <CommandItem onSelect={() => runCommand(() => window.location.reload())}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh Editor
-            </CommandItem>
-          )}
-        </CommandGroup>
-
-        <CommandGroup heading="Layout">
-          <CommandItem onSelect={() => runCommand(() => setLayout('split'))}>
-            <Eye className="mr-2 h-4 w-4" />
-            Split View
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => setLayout('editor-only'))}>
-            <Code className="mr-2 h-4 w-4" />
-            Editor Only
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => setLayout('preview-only'))}>
-            <Eye className="mr-2 h-4 w-4" />
-            Preview Only
-          </CommandItem>
-        </CommandGroup>
-
-        <CommandGroup heading="Settings">
-          <CommandItem onSelect={() => runCommand(toggleSettings)}>
-            <Settings className="mr-2 h-4 w-4" />
-            Open Settings
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(toggleDarkMode)}>
-            {isDarkMode ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-            Toggle {isDarkMode ? 'Light' : 'Dark'} Mode
-          </CommandItem>
-        </CommandGroup>
-
-        {projects.length > 0 && (
-          <CommandGroup heading="Recent Projects">
-            {projects.slice(0, 5).map((project) => (
-              <CommandItem
-                key={project.id}
-                onSelect={() => runCommand(() => {
-                  // Set active project and navigate
-                  useProjectStore.getState().setActiveProject(project);
-                  navigate('/ide');
-                })}
-              >
-                <FolderOpen className="mr-2 h-4 w-4" />
-                {project.name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        )}
+        {Object.entries(groupedActions).map(([category, categoryActions], index) => (
+          <div key={category}>
+            {index > 0 && <CommandSeparator />}
+            <CommandGroup heading={categoryLabels[category as keyof typeof categoryLabels]}>
+              {categoryActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <CommandItem
+                    key={action.id}
+                    onSelect={action.action}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{action.label}</span>
+                    {action.shortcut && (
+                      <CommandShortcut>{action.shortcut}</CommandShortcut>
+                    )}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </div>
+        ))}
       </CommandList>
     </CommandDialog>
   );

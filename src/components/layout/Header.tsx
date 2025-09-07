@@ -17,6 +17,7 @@ import {
   Home
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { NotificationCenter } from "@/components/features/NotificationCenter";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -140,9 +141,7 @@ const Header = () => {
           </Button>
 
           {/* Notifications */}
-          <Button variant="ghost" size="sm">
-            <Bell className="h-4 w-4" />
-          </Button>
+          <NotificationCenter />
 
           {/* Settings */}
           <Button

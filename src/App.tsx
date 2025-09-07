@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from "r
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ProtectedRoute } from "@/components/common/ProtectedRoute";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
+import PerformanceMonitor from "@/components/common/PerformanceMonitor";
 import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import Projects from "@/pages/Projects";
@@ -26,59 +28,62 @@ const AppContent = () => {
   const isAuthRoute = location.pathname.startsWith('/auth');
 
   return (
-    <div className={`${isIDERoute ? 'h-screen' : 'min-h-screen'} bg-background font-sans antialiased flex flex-col`}>
-      {!isIDERoute && !isAuthRoute && <Header />}
-      <main className="flex-1">
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/auth/login" element={<Login />} />
-          <Route path="/auth/register" element={<Register />} />
-          <Route path="/docs" element={<Documentation />} />
-          
-          {/* Protected Routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/projects" element={
-            <ProtectedRoute>
-              <Projects />
-            </ProtectedRoute>
-          } />
-          <Route path="/ide" element={
-            <ProtectedRoute>
-              <AdvancedIDE />
-            </ProtectedRoute>
-          } />
-          <Route path="/analytics" element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          } />
-          <Route path="/status" element={
-            <ProtectedRoute>
-              <ProjectStatus />
-            </ProtectedRoute>
-          } />
-          
-          {/* Redirect legacy routes */}
-          <Route path="/playground" element={<Navigate to="/ide" replace />} />
-          <Route path="/playground-new" element={<Navigate to="/ide" replace />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
-      {!isIDERoute && !isAuthRoute && <Footer />}
-      <Toaster />
-      
-      {/* Global Modals */}
-      <SettingsModal 
-        open={isSettingsOpen} 
-        onOpenChange={toggleSettings} 
-      />
-      <CommandPalette />
-    </div>
+    <ErrorBoundary>
+      <div className={`${isIDERoute ? 'h-screen' : 'min-h-screen'} bg-background font-sans antialiased flex flex-col`}>
+        {!isIDERoute && !isAuthRoute && <Header />}
+        <main className="flex-1">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth/login" element={<Login />} />
+            <Route path="/auth/register" element={<Register />} />
+            <Route path="/docs" element={<Documentation />} />
+            
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute>
+                <Projects />
+              </ProtectedRoute>
+            } />
+            <Route path="/ide" element={
+              <ProtectedRoute>
+                <AdvancedIDE />
+              </ProtectedRoute>
+            } />
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <Analytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/status" element={
+              <ProtectedRoute>
+                <ProjectStatus />
+              </ProtectedRoute>
+            } />
+            
+            {/* Redirect legacy routes */}
+            <Route path="/playground" element={<Navigate to="/ide" replace />} />
+            <Route path="/playground-new" element={<Navigate to="/ide" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+        {!isIDERoute && !isAuthRoute && <Footer />}
+        <Toaster />
+        
+        {/* Global Modals & Components */}
+        <SettingsModal 
+          open={isSettingsOpen} 
+          onOpenChange={toggleSettings} 
+        />
+        <CommandPalette />
+        <PerformanceMonitor />
+      </div>
+    </ErrorBoundary>
   );
 };
 
