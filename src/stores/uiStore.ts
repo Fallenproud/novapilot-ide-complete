@@ -13,6 +13,7 @@ interface UIState {
   isCommandPaletteOpen: boolean;
   isSettingsOpen: boolean;
   isAboutOpen: boolean;
+  isIDESettingsOpen: boolean;
   
   // Layout preferences
   layout: 'split' | 'editor-only' | 'preview-only';
@@ -31,6 +32,7 @@ interface UIState {
   toggleCommandPalette: () => void;
   toggleSettings: () => void;
   toggleAbout: () => void;
+  toggleIDESettings: () => void;
   
   setLayout: (layout: 'split' | 'editor-only' | 'preview-only') => void;
   toggleMinimap: () => void;
@@ -55,6 +57,7 @@ export const useUIStore = create<UIState>()(
       isCommandPaletteOpen: false,
       isSettingsOpen: false,
       isAboutOpen: false,
+      isIDESettingsOpen: false,
       
       // Layout preferences
       layout: 'split',
@@ -90,6 +93,10 @@ export const useUIStore = create<UIState>()(
 
       toggleAbout: () => {
         set(state => ({ isAboutOpen: !state.isAboutOpen }));
+      },
+
+      toggleIDESettings: () => {
+        set(state => ({ isIDESettingsOpen: !state.isIDESettingsOpen }));
       },
 
       setLayout: (layout) => {

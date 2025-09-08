@@ -26,7 +26,9 @@ const QUICK_TEMPLATES = [
     description: 'Modern responsive web app with authentication',
     icon: Globe,
     category: 'Web',
-    prompt: 'Create a modern web application with user authentication, dashboard, and responsive design using React and TypeScript'
+    prompt: 'Create a modern web application with user authentication, dashboard, and responsive design using React and TypeScript',
+    component: null,
+    preview: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300'
   },
   {
     id: 'ecommerce',
@@ -34,7 +36,9 @@ const QUICK_TEMPLATES = [
     description: 'Online store with cart and payments',
     icon: ShoppingBag,
     category: 'E-commerce',
-    prompt: 'Build an e-commerce platform with product catalog, shopping cart, user accounts, and payment integration'
+    prompt: 'Build an e-commerce platform with product catalog, shopping cart, user accounts, and payment integration',
+    component: 'EcommerceStore',
+    preview: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300'
   },
   {
     id: 'blog',
@@ -42,7 +46,9 @@ const QUICK_TEMPLATES = [
     description: 'Content management with rich editor',
     icon: BookOpen,
     category: 'Content',
-    prompt: 'Create a blog platform with rich text editor, categories, comments, and user management'
+    prompt: 'Create a blog platform with rich text editor, categories, comments, and user management',
+    component: 'BlogPlatform',
+    preview: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300'
   },
   {
     id: 'dashboard',
@@ -50,7 +56,9 @@ const QUICK_TEMPLATES = [
     description: 'Data visualization and reporting',
     icon: TrendingUp,
     category: 'Analytics',
-    prompt: 'Build an analytics dashboard with charts, graphs, data visualization, and real-time metrics'
+    prompt: 'Build an analytics dashboard with charts, graphs, data visualization, and real-time metrics',
+    component: 'AnalyticsDashboard',
+    preview: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300'
   },
   {
     id: 'social',
@@ -186,25 +194,45 @@ const TemplatesPopup: React.FC<TemplatesPopupProps> = ({ onSelectTemplate, trigg
                 return (
                   <Card
                     key={template.id}
-                    className="p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/50 bg-card border-border"
+                    className="group overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 bg-card border-border"
                     onClick={() => handleSelectTemplate(template)}
                   >
-                    <div className="flex items-start space-x-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Icon className="h-5 w-5 text-primary" />
+                    {/* Preview Image */}
+                    <div className="relative h-32 overflow-hidden bg-muted">
+                      <img 
+                        src={template.preview} 
+                        alt={template.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="secondary" className="text-xs bg-background/90 backdrop-blur-sm">
+                          {template.category}
+                        </Badge>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-medium text-foreground truncate">
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
                             {template.title}
                           </h3>
-                          <Badge variant="secondary" className="text-xs">
-                            {template.category}
-                          </Badge>
+                          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                            {template.description}
+                          </p>
+                          {template.component && (
+                            <div className="mt-2">
+                              <Badge variant="outline" className="text-xs text-green-600 border-green-200">
+                                ✓ Live Preview Available
+                              </Badge>
+                            </div>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                          {template.description}
-                        </p>
                       </div>
                     </div>
                   </Card>
